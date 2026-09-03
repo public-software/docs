@@ -42,8 +42,14 @@ h3.ring { font-family:"JetBrains Mono", Menlo, monospace; font-size:13px; font-w
 h3.ring i { width:12px; height:12px; border-radius:3px; display:inline-block; }
 p.ringsub { color:var(--muted); margin:0 0 14px; font-size:14.5px; }
 .repos { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:12px; }
-.repo { display:grid; grid-template-columns:56px 1fr; gap:14px; padding:14px; border:1px solid var(--line); border-radius:12px; color:var(--ink); align-items:start; }
-.repo:hover { border-color:var(--blue); text-decoration:none; }
+.repo { position:relative; display:grid; grid-template-columns:56px 1fr; gap:14px; padding:14px; border:1px solid var(--line); border-radius:12px; color:var(--ink); align-items:start; }
+.repo:hover, .repo:focus-within { border-color:var(--blue); }
+.repo a.cover { color:inherit; } .repo a.cover::after { content:""; position:absolute; inset:0; border-radius:12px; }
+.repo a.cover:hover { text-decoration:none; }
+.repo a.gh { position:absolute; top:10px; right:10px; z-index:2; display:inline-flex; align-items:center; gap:6px; padding:5px 9px; border-radius:7px; background:var(--blue); color:#fff; font-size:12px; font-weight:700; opacity:0; transition:opacity .12s; }
+.repo:hover a.gh, .repo a.gh:focus, .repo:focus-within a.gh { opacity:1; } .repo a.gh:hover { text-decoration:none; background:var(--blue-ink); }
+.repo a.gh svg { width:14px; height:14px; fill:currentColor; }
+@media (hover:none) { .repo a.gh { opacity:1; } }
 .repo svg { width:56px; height:56px; border-radius:10px; background:var(--paper); }
 .repo b { font-family:"JetBrains Mono", Menlo, monospace; font-size:14px; font-weight:600; }
 .repo span { display:block; color:var(--muted); font-size:13.5px; line-height:1.4; margin-top:3px; }

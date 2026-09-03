@@ -1,0 +1,23 @@
+[package]
+name = "pub-docs-aggregate"
+description = "Folds every repository's docs/ into the one handbook site tree"
+readme = "README.md"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+
+# The binary is what a user types; the crate keeps the pub-docs-<name> name.
+[[bin]]
+name = "docs-aggregate"
+path = "src/main.rs"
+
+[dependencies]
+pulldown-cmark = { version = "0.13", default-features = false }
+toml = { version = "1.1", default-features = false, features = ["std", "parse", "serde"] }
+
+[lints]
+workspace = true

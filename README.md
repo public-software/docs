@@ -13,16 +13,32 @@ Planned components: mdBook site · architecture · contributor guide · glossary
 
 ## In 30 seconds
 
-_A runnable example goes here the day the first crate lands._
+```sh
+cargo run -p pub-docs-aggregate -- \
+  --catalog ../catalog/catalog/catalog.toml --repos .. --handbook site/handbook --out target/site
+mdbook build target/site   # the handbook plus one chapter per repository
+```
 
 ## What it does
 
+- `site/www` and `site/handbook` are the landing page and the handbook, rendered from the bootstrap kit and
+  published by the Pages workflow.
+- `docs-aggregate` (crate `pub-docs-aggregate`) folds every repository's `docs/` into that handbook: given the
+  catalog, a directory of checkouts and the handbook, it writes one mdBook tree with a Repositories part in ring
+  order, one chapter per catalog repository (a generated index page, the repository's own book from
+  `docs/src/SUMMARY.md` or `docs/book.toml`, its architecture decision records from `docs/adr/`), and fails naming
+  every relative link in that tree that points nowhere.
+
 ## What it does not do (yet)
+
+- Run in the Pages workflow: the workflow is rendered by the kit and still builds the handbook alone.
+- Architecture pages and the glossary beyond what the handbook carries.
 
 ## Status
 
 | Ledger entry | Readiness | Next |
 |---|---|---|
+| mdBook site | seed | run `docs-aggregate` from the Pages workflow over the whole suite |
 
 ## How it fits the suite
 

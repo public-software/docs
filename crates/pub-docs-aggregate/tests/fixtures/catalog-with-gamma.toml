@@ -1,0 +1,20 @@
+[catalog]
+version = 1
+org     = "public-software"
+site    = "https://example.test"
+
+[[repo]]
+name     = "alpha"
+ring     = "spine"
+wave     = 1
+layers   = ["all"]
+purpose  = "The alpha purpose: decisions only."
+contents = "ADRs"
+
+[[repo]]
+name     = "gamma"
+ring     = "system"
+wave     = 1
+layers   = ["L9"]
+purpose  = "The gamma purpose: a dangling link and a missing chapter."
+contents = "broken docs"

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>plugin-runtime · Public Software</title>
+<meta name="description" content="WASM Component Model host, capability policy, plugin test-kit, plugin packaging.">
+<meta property="og:title" content="public-software/plugin-runtime">
+<meta property="og:description" content="WASM Component Model host, capability policy, plugin test-kit, plugin packaging.">
+<meta property="og:image" content="https://publicsoftware.dev/assets/social.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root { --page:#FAFAF8; --paper:#F2F3F1; --ink:#14181F; --muted:#5B6472; --line:#DADDD9; --blue:#1F4E8C; --blue-ink:#163B6B; }
+@media (prefers-color-scheme: dark) { :root { --page:#0F141B; --paper:#171D26; --ink:#EEF0EC; --muted:#9AA3AE; --line:#2A323D; --blue:#7FA7DE; --blue-ink:#A9C4EC; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:"Public Sans", system-ui, -apple-system, sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased; }
+a { color:var(--blue); text-decoration:none; } a:hover { text-decoration:underline; }
+.wrap { max-width:1120px; margin:0 auto; padding:0 24px; }
+header.top { display:flex; align-items:center; justify-content:space-between; padding:22px 0; }
+.brand { display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:-0.3px; color:var(--ink); }
+.brand img { width:34px; height:34px; }
+nav a { margin-left:22px; font-weight:600; color:var(--ink); } nav a:hover { color:var(--blue); text-decoration:none; }
+.hero { display:grid; grid-template-columns:1.05fr 1fr; gap:40px; align-items:center; padding:36px 0 56px; }
+.hero img { width:100%; height:auto; border-radius:10px; }
+h1 { font-size:clamp(34px, 5vw, 54px); line-height:1.05; letter-spacing:-1.5px; font-weight:800; margin:0 0 18px; text-wrap:balance; }
+h1 em { font-style:normal; color:var(--blue); }
+.lede { font-size:18px; color:var(--muted); max-width:52ch; margin:0 0 26px; }
+.cta { display:flex; gap:12px; flex-wrap:wrap; }
+.cta a { padding:11px 18px; border-radius:8px; font-weight:700; border:1.5px solid var(--blue); }
+.cta a.primary { background:var(--blue); color:#fff; } .cta a.primary:hover { background:var(--blue-ink); border-color:var(--blue-ink); text-decoration:none; }
+.cta a:hover { text-decoration:none; }
+h2 { font-size:26px; font-weight:800; letter-spacing:-0.5px; margin:0 0 6px; }
+.sub { color:var(--muted); margin:0 0 22px; max-width:66ch; }
+section { padding:40px 0; border-top:1px solid var(--line); }
+.start { display:grid; grid-template-columns:repeat(3, 1fr); gap:18px; }
+.start a { display:block; padding:20px; border:1px solid var(--line); border-radius:12px; color:var(--ink); background:var(--paper); }
+.start a:hover { border-color:var(--blue); text-decoration:none; }
+.start b { display:block; font-size:17px; margin-bottom:6px; } .start span { color:var(--muted); font-size:14.5px; }
+.start code { font-family:"JetBrains Mono", Menlo, monospace; font-size:13px; }
+h3.ring { font-family:"JetBrains Mono", Menlo, monospace; font-size:13px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; margin:30px 0 4px; display:flex; align-items:center; gap:10px; }
+h3.ring i { width:12px; height:12px; border-radius:3px; display:inline-block; }
+p.ringsub { color:var(--muted); margin:0 0 14px; font-size:14.5px; }
+.repos { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:12px; }
+.repo { display:grid; grid-template-columns:56px 1fr; gap:14px; padding:14px; border:1px solid var(--line); border-radius:12px; color:var(--ink); align-items:start; }
+.repo:hover { border-color:var(--blue); text-decoration:none; }
+.repo svg { width:56px; height:56px; border-radius:10px; background:var(--paper); }
+.repo b { font-family:"JetBrains Mono", Menlo, monospace; font-size:14px; font-weight:600; }
+.repo span { display:block; color:var(--muted); font-size:13.5px; line-height:1.4; margin-top:3px; }
+.repo small { display:block; color:var(--muted); font-family:"JetBrains Mono", Menlo, monospace; font-size:11px; margin-top:6px; letter-spacing:0.3px; }
+.how { display:grid; grid-template-columns:repeat(2, 1fr); gap:22px 40px; }
+.how b { display:block; margin-bottom:4px; } .how p { margin:0; color:var(--muted); }
+footer { padding:36px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+footer a { color:var(--ink); }
+@media (max-width:820px) { .hero, .start, .how { grid-template-columns:1fr; } nav a { margin-left:14px; } }
+
+.crumbs { font-family:"JetBrains Mono", Menlo, monospace; font-size:13px; color:var(--muted); margin:6px 0 18px; }
+.crumbs a { color:var(--muted); }
+.rhero { display:grid; grid-template-columns:220px 1fr; gap:36px; align-items:center; padding:18px 0 40px; }
+.rhero img { width:100%; height:auto; border-radius:14px; background:var(--paper); }
+.rhero h1 { font-family:"JetBrains Mono", Menlo, monospace; font-size:clamp(30px, 4vw, 44px); letter-spacing:-1px; margin:0 0 10px; }
+.ringtag { display:inline-flex; align-items:center; gap:8px; font-family:"JetBrains Mono", Menlo, monospace; font-size:12px; letter-spacing:0.6px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+.ringtag i { width:12px; height:12px; border-radius:3px; display:inline-block; }
+.facts { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; }
+.fact { padding:14px 16px; border:1px solid var(--line); border-radius:12px; background:var(--paper); }
+.fact b { display:block; font-family:"JetBrains Mono", Menlo, monospace; font-size:11px; letter-spacing:0.6px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+.fact span { font-size:15px; }
+ul.parts { columns:2; gap:32px; padding-left:20px; margin:0; } ul.parts li { margin:0 0 6px; break-inside:avoid; }
+.links { display:flex; gap:12px; flex-wrap:wrap; }
+.links a { padding:10px 16px; border:1.5px solid var(--blue); border-radius:8px; font-weight:700; }
+.links a.primary { background:var(--blue); color:#fff; }
+.siblings { display:flex; gap:10px; flex-wrap:wrap; }
+.siblings a { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--line); border-radius:10px; color:var(--ink); font-family:"JetBrains Mono", Menlo, monospace; font-size:13px; }
+.siblings svg { width:28px; height:28px; border-radius:6px; background:var(--paper); }
+@media (max-width:720px) { .rhero { grid-template-columns:1fr; } ul.parts { columns:1; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <a class="brand" href="/"><img src="/favicon.svg" alt="">Public Software</a>
+  <nav><a href="/handbook/">Handbook</a><a href="/#suite">The suite</a><a href="https://github.com/public-software/rfcs/pulls">RFCs</a><a href="https://github.com/public-software">GitHub</a></nav>
+</header>
+<div class="crumbs"><a href="/">Public Software</a> / <a href="/#suite">platform ring</a> / plugin-runtime</div>
+
+<section class="rhero" style="border-top:0">
+  <img src="/assets/marks/plugin-runtime.png" alt="The plugin-runtime mark: a plug: two prongs, a body, a cord. components plug into the host" width="512" height="512">
+  <div>
+    <div class="ringtag"><i style="background:#157A72"></i>Platform ring</div>
+    <h1>plugin-runtime</h1>
+    <p class="lede">WASM Component Model host, capability policy, plugin test-kit, plugin packaging.</p>
+    <div class="links"><a class="primary" href="https://github.com/public-software/plugin-runtime">Repository</a><a href="https://github.com/public-software/plugin-runtime/issues">Issues</a><a href="https://github.com/public-software/plugin-runtime/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22">Good first issues</a></div>
+  </div>
+</section>
+
+<section>
+  <div class="facts">
+    <div class="fact"><b>Layers</b><span>L2</span></div>
+    <div class="fact"><b>Wave</b><span>1</span></div>
+    <div class="fact"><b>Tier</b><span>incubating</span></div>
+    <div class="fact"><b>Readiness</b><span>none yet</span></div>
+    <div class="fact"><b>Maintainers</b><span><a href="https://github.com/orgs/public-software/teams/maint-plugin-runtime">maint-plugin-runtime</a></span></div>
+    <div class="fact"><b>Licence</b><span>Apache-2.0 OR MIT</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Planned components</h2>
+  <p class="sub">What this repository will contain, from the catalog. No crate has shipped yet; the first release train is 2027.1.</p>
+  <ul class="parts"><li>pub-plugin-host</li><li>pub-plugin-sdk</li><li>pub-plugin-testkit</li><li>pub-plugin-pack</li></ul>
+</section>
+
+<section>
+  <h2>The mark</h2>
+  <p class="sub">A plug: two prongs, a body, a cord. Components plug into the host. Every repository's mark is built from the same parts, in the colour of its ring.</p>
+</section>
+
+<section>
+  <h2>Also in the platform ring</h2>
+  <p class="sub">The crates every repository uses.</p>
+  <div class="siblings"><a href="/platform/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="6.40,6.40 57.60,6.40 57.60,57.60 6.40,57.60" fill="#4C9892"/><polygon points="9.60,9.60 19.84,9.60 19.84,19.84 9.60,19.84" fill="#157A72"/><polygon points="44.16,9.60 54.40,9.60 54.40,19.84 44.16,19.84" fill="#157A72"/><polygon points="9.60,44.16 19.84,44.16 19.84,54.40 9.60,54.40" fill="#157A72"/><polygon points="44.16,44.16 54.40,44.16 54.40,54.40 44.16,54.40" fill="#157A72"/></svg>platform</a><a href="/design-system/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="6.40,6.40 20.48,6.40 20.48,20.48 6.40,20.48" fill="#157A72"/><polygon points="24.96,6.40 39.04,6.40 39.04,20.48 24.96,20.48" fill="#157A72"/><polygon points="43.52,6.40 57.60,6.40 57.60,20.48 43.52,20.48" fill="#157A72"/><polygon points="6.40,32.00 57.60,32.00 57.60,37.76 6.40,37.76" fill="#157A72"/><polygon points="6.40,47.36 38.40,47.36 38.40,53.12 6.40,53.12" fill="#157A72"/></svg>design-system</a><a href="/ui/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="6.40,6.40 57.60,6.40 57.60,57.60 6.40,57.60" fill="#4C9892"/><polygon points="6.40,6.40 57.60,6.40 57.60,16.64 6.40,16.64" fill="#157A72"/><polygon points="6.40,16.64 20.48,16.64 20.48,57.60 6.40,57.60" fill="#157A72"/></svg>ui</a><a href="/doc-model/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="28.16,6.40 35.84,6.40 35.84,24.96 28.16,24.96" fill="#4C9892"/><polygon points="28.16,39.04 35.84,39.04 35.84,57.60 28.16,57.60" fill="#4C9892"/><polygon points="6.40,28.16 24.96,28.16 24.96,35.84 6.40,35.84" fill="#4C9892"/><polygon points="39.04,28.16 57.60,28.16 57.60,35.84 39.04,35.84" fill="#4C9892"/><polygon points="26.88,6.40 37.12,6.40 37.12,16.64 26.88,16.64" fill="#4C9892"/><polygon points="26.88,47.36 37.12,47.36 37.12,57.60 26.88,57.60" fill="#4C9892"/><polygon points="6.40,26.88 16.64,26.88 16.64,37.12 6.40,37.12" fill="#4C9892"/><polygon points="47.36,26.88 57.60,26.88 57.60,37.12 47.36,37.12" fill="#4C9892"/><polygon points="24.96,24.96 39.04,24.96 39.04,39.04 24.96,39.04" fill="#157A72"/></svg>doc-model</a><a href="/identity/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="41.49,23.04 36.00,28.63 28.16,28.69 22.57,23.20 22.51,15.36 28.00,9.77 35.84,9.71 41.43,15.20" fill="#157A72"/><polygon points="27.52,26.88 36.48,26.88 36.48,35.84 27.52,35.84" fill="#157A72"/><polygon points="10.24,34.56 53.76,34.56 53.76,55.04 10.24,55.04" fill="#157A72"/></svg>identity</a><a href="/pkg/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="12.80,12.80 51.20,12.80 51.20,51.20 12.80,51.20" fill="#4C9892"/><polygon points="30.08,12.80 33.92,12.80 33.92,51.20 30.08,51.20" fill="#157A72"/><polygon points="12.80,30.08 51.20,30.08 51.20,33.92 12.80,33.92" fill="#157A72"/></svg>pkg</a><a href="/observe/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="53.96,40.87 41.25,53.80 23.13,53.96 10.20,41.25 10.04,23.13 22.75,10.20 40.87,10.04 53.80,22.75" fill="#4C9892"/><polygon points="40.31,35.36 35.50,40.25 28.64,40.31 23.75,35.50 23.69,28.64 28.50,23.75 35.36,23.69 40.25,28.50" fill="#157A72"/></svg>observe</a></div>
+</section>
+
+<footer>
+  <div>Public Software · <a href="mailto:hello@publicsoftware.dev">hello@publicsoftware.dev</a> · <a href="/.well-known/security.txt">security.txt</a></div>
+  <div><a href="/handbook/">Handbook</a> · <a href="https://github.com/public-software/.github/blob/main/CONTRIBUTING.md">Contributing</a> · <a href="https://github.com/public-software/docs">Site source</a></div>
+</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>engineering · Public Software</title>
+<meta name="description" content="PCB EDA, SPICE, FEA, CFD, systems modelling (Modelica), PLC runtime, SCADA/HMI, DAQ, robotics tooling.">
+<meta property="og:title" content="public-software/engineering">
+<meta property="og:description" content="PCB EDA, SPICE, FEA, CFD, systems modelling (Modelica), PLC runtime, SCADA/HMI, DAQ, robotics tooling.">
+<meta property="og:image" content="https://publicsoftware.dev/assets/social.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root { --page:#FAFAF8; --paper:#F2F3F1; --ink:#14181F; --muted:#5B6472; --line:#DADDD9; --blue:#1F4E8C; --blue-ink:#163B6B; }
+@media (prefers-color-scheme: dark) { :root { --page:#0F141B; --paper:#171D26; --ink:#EEF0EC; --muted:#9AA3AE; --line:#2A323D; --blue:#7FA7DE; --blue-ink:#A9C4EC; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:"Public Sans", system-ui, -apple-system, sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased; }
+a { color:var(--blue); text-decoration:none; } a:hover { text-decoration:underline; }
+.wrap { max-width:1120px; margin:0 auto; padding:0 24px; }
+header.top { display:flex; align-items:center; justify-content:space-between; padding:22px 0; }
+.brand { display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:-0.3px; color:var(--ink); }
+.brand img { width:34px; height:34px; }
+nav a { margin-left:22px; font-weight:600; color:var(--ink); } nav a:hover { color:var(--blue); text-decoration:none; }
+.hero { display:grid; grid-template-columns:1.05fr 1fr; gap:40px; align-items:center; padding:36px 0 56px; }
+.hero img { width:100%; height:auto; border-radius:10px; }
+h1 { font-size:clamp(34px, 5vw, 54px); line-height:1.05; letter-spacing:-1.5px; font-weight:800; margin:0 0 18px; text-wrap:balance; }
+h1 em { font-style:normal; color:var(--blue); }
+.lede { font-size:18px; color:var(--muted); max-width:52ch; margin:0 0 26px; }
+.cta { display:flex; gap:12px; flex-wrap:wrap; }
+.cta a { padding:11px 18px; border-radius:8px; font-weight:700; border:1.5px solid var(--blue); }
+.cta a.primary { background:var(--blue); color:#fff; } .cta a.primary:hover { background:var(--blue-ink); border-color:var(--blue-ink); text-decoration:none; }
+.cta a:hover { text-decoration:none; }
+h2 { font-size:26px; font-weight:800; letter-spacing:-0.5px; margin:0 0 6px; }
+.sub { color:var(--muted); margin:0 0 22px; max-width:66ch; }
+section { padding:40px 0; border-top:1px solid var(--line); }
+.start { display:grid; grid-template-columns:repeat(3, 1fr); gap:18px; }
+.start a { display:block; padding:20px; border:1px solid var(--line); border-radius:12px; color:var(--ink); background:var(--paper); }
+.start a:hover { border-color:var(--blue); text-decoration:none; }
+.start b { display:block; font-size:17px; margin-bottom:6px; } .start span { color:var(--muted); font-size:14.5px; }
+.start code { font-family:"JetBrains Mono", Menlo, monospace; font-size:13px; }
+h3.ring { font-family:"JetBrains Mono", Menlo, monospace; font-size:13px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; margin:30px 0 4px; display:flex; align-items:center; gap:10px; }
+h3.ring i { width:12px; height:12px; border-radius:3px; display:inline-block; }
+p.ringsub { color:var(--muted); margin:0 0 14px; font-size:14.5px; }
+.repos { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:12px; }
+.repo { display:grid; grid-template-columns:56px 1fr; gap:14px; padding:14px; border:1px solid var(--line); border-radius:12px; color:var(--ink); align-items:start; }
+.repo:hover { border-color:var(--blue); text-decoration:none; }
+.repo svg { width:56px; height:56px; border-radius:10px; background:var(--paper); }
+.repo b { font-family:"JetBrains Mono", Menlo, monospace; font-size:14px; font-weight:600; }
+.repo span { display:block; color:var(--muted); font-size:13.5px; line-height:1.4; margin-top:3px; }
+.repo small { display:block; color:var(--muted); font-family:"JetBrains Mono", Menlo, monospace; font-size:11px; margin-top:6px; letter-spacing:0.3px; }
+.how { display:grid; grid-template-columns:repeat(2, 1fr); gap:22px 40px; }
+.how b { display:block; margin-bottom:4px; } .how p { margin:0; color:var(--muted); }
+footer { padding:36px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+footer a { color:var(--ink); }
+@media (max-width:820px) { .hero, .start, .how { grid-template-columns:1fr; } nav a { margin-left:14px; } }
+
+.crumbs { font-family:"JetBrains Mono", Menlo, monospace; font-size:13px; color:var(--muted); margin:6px 0 18px; }
+.crumbs a { color:var(--muted); }
+.rhero { display:grid; grid-template-columns:220px 1fr; gap:36px; align-items:center; padding:18px 0 40px; }
+.rhero img { width:100%; height:auto; border-radius:14px; background:var(--paper); }
+.rhero h1 { font-family:"JetBrains Mono", Menlo, monospace; font-size:clamp(30px, 4vw, 44px); letter-spacing:-1px; margin:0 0 10px; }
+.ringtag { display:inline-flex; align-items:center; gap:8px; font-family:"JetBrains Mono", Menlo, monospace; font-size:12px; letter-spacing:0.6px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+.ringtag i { width:12px; height:12px; border-radius:3px; display:inline-block; }
+.facts { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; }
+.fact { padding:14px 16px; border:1px solid var(--line); border-radius:12px; background:var(--paper); }
+.fact b { display:block; font-family:"JetBrains Mono", Menlo, monospace; font-size:11px; letter-spacing:0.6px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+.fact span { font-size:15px; }
+ul.parts { columns:2; gap:32px; padding-left:20px; margin:0; } ul.parts li { margin:0 0 6px; break-inside:avoid; }
+.links { display:flex; gap:12px; flex-wrap:wrap; }
+.links a { padding:10px 16px; border:1.5px solid var(--blue); border-radius:8px; font-weight:700; }
+.links a.primary { background:var(--blue); color:#fff; }
+.siblings { display:flex; gap:10px; flex-wrap:wrap; }
+.siblings a { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--line); border-radius:10px; color:var(--ink); font-family:"JetBrains Mono", Menlo, monospace; font-size:13px; }
+.siblings svg { width:28px; height:28px; border-radius:6px; background:var(--paper); }
+@media (max-width:720px) { .rhero { grid-template-columns:1fr; } ul.parts { columns:1; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <a class="brand" href="/"><img src="/favicon.svg" alt="">Public Software</a>
+  <nav><a href="/handbook/">Handbook</a><a href="/#suite">The suite</a><a href="https://github.com/public-software/rfcs/pulls">RFCs</a><a href="https://github.com/public-software">GitHub</a></nav>
+</header>
+<div class="crumbs"><a href="/">Public Software</a> / <a href="/#suite">domain ring</a> / engineering</div>
+
+<section class="rhero" style="border-top:0">
+  <img src="/assets/marks/engineering.png" alt="The engineering mark: a trace across a board: pcb, spice, the physical world" width="512" height="512">
+  <div>
+    <div class="ringtag"><i style="background:#6B2D5C"></i>Domain ring</div>
+    <h1>engineering</h1>
+    <p class="lede">PCB EDA, SPICE, FEA, CFD, systems modelling (Modelica), PLC runtime, SCADA/HMI, DAQ, robotics tooling.</p>
+    <div class="links"><a class="primary" href="https://github.com/public-software/engineering">Repository</a><a href="https://github.com/public-software/engineering/issues">Issues</a><a href="https://github.com/public-software/engineering/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22">Good first issues</a></div>
+  </div>
+</section>
+
+<section>
+  <div class="facts">
+    <div class="fact"><b>Layers</b><span>L14</span></div>
+    <div class="fact"><b>Wave</b><span>1</span></div>
+    <div class="fact"><b>Tier</b><span>incubating</span></div>
+    <div class="fact"><b>Readiness</b><span>none yet</span></div>
+    <div class="fact"><b>Maintainers</b><span><a href="https://github.com/orgs/public-software/teams/maint-engineering">maint-engineering</a></span></div>
+    <div class="fact"><b>Licence</b><span>Apache-2.0 OR MIT</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Planned components</h2>
+  <p class="sub">What this repository will contain, from the catalog. No crate has shipped yet; the first release train is 2027.1.</p>
+  <ul class="parts"><li>pub-pcb</li><li>pub-spice</li><li>pub-fea</li><li>pub-cfd</li><li>pub-modelica</li><li>pub-plc</li><li>pub-scada</li><li>pub-daq</li><li>pub-robot</li></ul>
+</section>
+
+<section>
+  <h2>The mark</h2>
+  <p class="sub">A trace across a board: PCB, SPICE, the physical world. Every repository's mark is built from the same parts, in the colour of its ring.</p>
+</section>
+
+<section>
+  <h2>Also in the domain ring</h2>
+  <p class="sub">The products.</p>
+  <div class="siblings"><a href="/office/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="6.40,6.40 57.60,6.40 57.60,57.60 6.40,57.60" fill="#8D5E81"/><polygon points="6.40,22.72 57.60,22.72 57.60,24.96 6.40,24.96" fill="#6B2D5C"/><polygon points="6.40,39.04 57.60,39.04 57.60,41.28 6.40,41.28" fill="#6B2D5C"/><polygon points="22.72,6.40 24.96,6.40 24.96,57.60 22.72,57.60" fill="#6B2D5C"/><polygon points="39.04,6.40 41.28,6.40 41.28,57.60 39.04,57.60" fill="#6B2D5C"/></svg>office</a><a href="/workspace/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="6.40,6.40 20.48,6.40 20.48,19.20 6.40,19.20" fill="#6B2D5C"/><polygon points="6.40,23.04 20.48,23.04 20.48,35.84 6.40,35.84" fill="#6B2D5C"/><polygon points="6.40,39.68 20.48,39.68 20.48,52.48 6.40,52.48" fill="#6B2D5C"/><polygon points="24.96,6.40 39.04,6.40 39.04,19.20 24.96,19.20" fill="#6B2D5C"/><polygon points="24.96,23.04 39.04,23.04 39.04,35.84 24.96,35.84" fill="#6B2D5C"/><polygon points="43.52,6.40 57.60,6.40 57.60,19.20 43.52,19.20" fill="#6B2D5C"/></svg>workspace</a><a href="/home/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="32.00,6.40 57.60,26.88 6.40,26.88" fill="#8D5E81"/><polygon points="12.80,26.88 51.20,26.88 51.20,57.60 12.80,57.60" fill="#8D5E81"/><polygon points="42.24,14.08 48.00,14.08 48.00,28.16 42.24,28.16" fill="#8D5E81"/><polygon points="28.16,40.96 35.84,40.96 35.84,57.60 28.16,57.60" fill="#6B2D5C"/></svg>home</a><a href="/imaging/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="6.40,6.40 57.60,6.40 57.60,57.60 6.40,57.60" fill="#8D5E81"/><polygon points="10.24,52.48 32.00,25.60 53.76,52.48" fill="#6B2D5C"/><polygon points="23.90,20.72 20.81,23.86 16.40,23.90 13.26,20.81 13.22,16.40 16.31,13.26 20.72,13.22 23.86,16.31" fill="#6B2D5C"/></svg>imaging</a><a href="/video/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="6.40,20.48 57.60,20.48 57.60,57.60 6.40,57.60" fill="#9D7793"/><polygon points="6.40,8.96 57.60,8.96 57.60,19.20 6.40,19.20" fill="#7C466E"/><polygon points="12.80,8.96 21.76,8.96 21.76,19.20 12.80,19.20" fill="#6B2D5C"/><polygon points="32.00,8.96 40.96,8.96 40.96,19.20 32.00,19.20" fill="#6B2D5C"/></svg>video</a><a href="/audio/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="31.89,49.92 26.40,55.51 18.56,55.57 12.97,50.08 12.91,42.24 18.40,36.65 26.24,36.59 31.83,42.08" fill="#6B2D5C"/><polygon points="28.16,6.40 33.28,6.40 33.28,48.00 28.16,48.00" fill="#6B2D5C"/><polygon points="28.16,6.40 49.92,6.40 49.92,13.44 28.16,13.44" fill="#6B2D5C"/></svg>audio</a><a href="/3d/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="10.24,20.48 32.00,33.28 32.00,57.60" fill="#9D7793"/><polygon points="10.24,20.48 32.00,57.60 10.24,44.80" fill="#9D7793"/><polygon points="32.00,33.28 53.76,20.48 53.76,44.80" fill="#7C466E"/><polygon points="32.00,33.28 53.76,44.80 32.00,57.60" fill="#7C466E"/><polygon points="32.00,7.68 53.76,20.48 32.00,33.28" fill="#6B2D5C"/><polygon points="32.00,33.28 10.24,20.48 32.00,7.68" fill="#6B2D5C"/></svg>3d</a><a href="/cad/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="28.80,6.40 35.20,6.40 10.24,57.60" fill="#8D5E81"/><polygon points="28.80,6.40 35.20,6.40 53.76,57.60" fill="#8D5E81"/><polygon points="37.34,13.68 34.25,16.82 29.84,16.86 26.70,13.77 26.66,9.36 29.75,6.22 34.16,6.18 37.30,9.27" fill="#6B2D5C"/></svg>cad</a><a href="/science/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="23.04,6.40 40.96,6.40 40.96,11.52 23.04,11.52" fill="#6B2D5C"/><polygon points="27.52,10.24 36.48,10.24 36.48,25.60 27.52,25.60" fill="#6B2D5C"/><polygon points="32.00,20.48 55.04,57.60 8.96,57.60" fill="#6B2D5C"/></svg>science</a><a href="/business/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="9.60,38.40 21.12,38.40 21.12,54.40 9.60,54.40" fill="#6B2D5C"/><polygon points="26.24,25.60 37.76,25.60 37.76,54.40 26.24,54.40" fill="#6B2D5C"/><polygon points="42.88,9.60 54.40,9.60 54.40,54.40 42.88,54.40" fill="#6B2D5C"/><polygon points="6.40,53.76 57.60,53.76 57.60,57.60 6.40,57.60" fill="#6B2D5C"/></svg>business</a><a href="/finance/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="52.77,40.39 40.75,52.62 23.61,52.77 11.38,40.75 11.23,23.61 23.25,11.38 40.39,11.23 52.62,23.25" fill="#9D7793"/><polygon points="46.24,37.75 38.00,46.14 26.25,46.24 17.86,38.00 17.76,26.25 26.00,17.86 37.75,17.76 46.14,26.00" fill="#7C466E"/><polygon points="28.16,21.76 35.84,21.76 35.84,42.24 28.16,42.24" fill="#6B2D5C"/></svg>finance</a><a href="/health/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="25.60,6.40 38.40,6.40 38.40,57.60 25.60,57.60" fill="#6B2D5C"/><polygon points="6.40,25.60 57.60,25.60 57.60,38.40 6.40,38.40" fill="#6B2D5C"/></svg>health</a><a href="/civic/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="32.00,6.40 57.60,23.04 6.40,23.04" fill="#6B2D5C"/><polygon points="10.24,21.76 53.76,21.76 53.76,27.52 10.24,27.52" fill="#6B2D5C"/><polygon points="12.80,26.88 20.48,26.88 20.48,49.92 12.80,49.92" fill="#6B2D5C"/><polygon points="28.16,26.88 35.84,26.88 35.84,49.92 28.16,49.92" fill="#6B2D5C"/><polygon points="43.52,26.88 51.20,26.88 51.20,49.92 43.52,49.92" fill="#6B2D5C"/><polygon points="6.40,49.92 57.60,49.92 57.60,57.60 6.40,57.60" fill="#6B2D5C"/></svg>civic</a><a href="/games/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="6.40,19.20 57.60,19.20 57.60,44.80 6.40,44.80" fill="#8D5E81"/><polygon points="48.70,28.84 46.82,30.76 44.12,30.78 42.20,28.90 42.18,26.20 44.06,24.28 46.76,24.26 48.68,26.14" fill="#6B2D5C"/><polygon points="53.82,36.52 51.94,38.44 49.24,38.46 47.32,36.58 47.30,33.88 49.18,31.96 51.88,31.94 53.80,33.82" fill="#6B2D5C"/><polygon points="12.80,30.08 25.60,30.08 25.60,33.92 12.80,33.92" fill="#6B2D5C"/><polygon points="17.28,25.60 21.12,25.60 21.12,38.40 17.28,38.40" fill="#6B2D5C"/></svg>games</a></div>
+</section>
+
+<footer>
+  <div>Public Software · <a href="mailto:hello@publicsoftware.dev">hello@publicsoftware.dev</a> · <a href="/.well-known/security.txt">security.txt</a></div>
+  <div><a href="/handbook/">Handbook</a> · <a href="https://github.com/public-software/.github/blob/main/CONTRIBUTING.md">Contributing</a> · <a href="https://github.com/public-software/docs">Site source</a></div>
+</footer>
+</div>
+</body>
+</html>

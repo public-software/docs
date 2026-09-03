@@ -1,0 +1,9 @@
+/* Public Software handbook: brand tokens over mdBook's light and navy themes. */
+:root { --ps-blue: #1F4E8C; --ps-ink: #14181F; --ps-paper: #F2F3F1; }
+.light { --bg: #FAFAF8; --fg: var(--ps-ink); --sidebar-bg: var(--ps-paper); --links: var(--ps-blue); --inline-code-color: #6B2D5C; }
+.navy { --links: #7FA7DE; }
+html { font-family: "Public Sans", system-ui, -apple-system, sans-serif; }
+.menu-title { font-weight: 800; letter-spacing: -0.3px; }
+h1, h2, h3 { font-weight: 800; letter-spacing: -0.4px; }
+code, pre { font-family: "JetBrains Mono", Menlo, monospace; }
+table th { font-family: "JetBrains Mono", Menlo, monospace; font-size: 0.8em; letter-spacing: 0.5px; text-transform: uppercase; }

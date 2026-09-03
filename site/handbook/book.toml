@@ -1,0 +1,14 @@
+[book]
+title = "Public Software handbook"
+description = "How the suite is organized, how it is built, and how to take part."
+authors = ["Public Software"]
+language = "en"
+src = "src"
+
+[output.html]
+site-url = "/handbook/"
+git-repository-url = "https://github.com/public-software/docs"
+edit-url-template = "https://github.com/public-software/docs/edit/main/site/handbook/{path}"
+additional-css = ["brand.css"]
+default-theme = "light"
+preferred-dark-theme = "navy"

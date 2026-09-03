@@ -22,3 +22,13 @@ summary     = "The suite handbook: architecture, contracts, contributor guide, p
 # specs     = []
 # provides  = ["public:area/iface@1"]
 # requires  = []
+
+[[component]]
+crate     = "pub-docs-aggregate"   # binary: docs-aggregate
+kind      = "app"
+ledger    = "mdBook site"
+readiness = "seed"
+effort    = 2
+specs     = []
+provides  = []
+requires  = []

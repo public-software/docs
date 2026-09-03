@@ -1,0 +1,8 @@
+[book]
+title = "Fixture handbook"
+authors = ["Fixture"]
+language = "en"
+src = "src"
+
+[output.html]
+additional-css = ["brand.css"]

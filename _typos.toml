@@ -1,0 +1,4 @@
+# typos (CI: `suite / typos`). Words that are names, not misspellings.
+[default.extend-words]
+ue  = "ue"    # UE: user equipment, the handset side of 4G/5G (the sdr repository's purpose)
+ehr = "ehr"   # EHR: electronic health record (the health repository's purpose)

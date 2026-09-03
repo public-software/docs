@@ -1,0 +1,29 @@
+# A three-repository catalog: the entries are out of ring order on purpose.
+[catalog]
+version = 1
+org     = "public-software"
+site    = "https://example.test"
+
+[[repo]]
+name     = "beta"
+ring     = "platform"
+wave     = 1
+layers   = ["L4"]
+purpose  = "The beta purpose: a book and one decision."
+contents = "a book"
+
+[[repo]]
+name     = "alpha"
+ring     = "spine"
+wave     = 1
+layers   = ["all"]
+purpose  = "The alpha purpose: decisions only."
+contents = "ADRs"
+
+[[repo]]
+name     = "delta"
+ring     = "domain"
+wave     = 2
+layers   = ["L16", "L12"]
+purpose  = "The delta purpose: not checked out."
+contents = "nothing yet"

@@ -1,0 +1,1107 @@
+{
+ "as_of": "2026-09-04",
+ "status": "9 of 57 repositories have a first crate, as of 2026-09-04",
+ "waves": {
+  "1": {
+   "repositories": 42,
+   "with_crate": 9
+  },
+  "2": {
+   "repositories": 12,
+   "with_crate": 0
+  },
+  "3": {
+   "repositories": 3,
+   "with_crate": 0
+  }
+ },
+ "repositories": [
+  {
+   "name": "catalog",
+   "ring": "spine",
+   "wave": 1,
+   "layers": [
+    "L18"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T09:35:26Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "interfaces",
+   "ring": "spine",
+   "wave": 1,
+   "layers": [
+    "all"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:13Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "suite",
+   "ring": "spine",
+   "wave": 1,
+   "layers": [
+    "all"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:13Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "rfcs",
+   "ring": "spine",
+   "wave": 1,
+   "layers": [
+    "all"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:13Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "docs",
+   "ring": "spine",
+   "wave": 1,
+   "layers": [
+    "all"
+   ],
+   "readiness": "seed",
+   "components": [
+    {
+     "crate": "pub-docs-aggregate",
+     "kind": "app",
+     "readiness": "seed"
+    }
+   ],
+   "activity": {
+    "pushed_at": "2026-09-04T03:49:15Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "pub",
+   "ring": "spine",
+   "wave": 1,
+   "layers": [
+    "L2"
+   ],
+   "readiness": "partial",
+   "components": [
+    {
+     "crate": "pub-cli",
+     "kind": "app",
+     "readiness": "partial"
+    }
+   ],
+   "activity": {
+    "pushed_at": "2026-09-03T21:11:33Z",
+    "open_issues": 0,
+    "open_prs": 1,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "templates",
+   "ring": "spine",
+   "wave": 1,
+   "layers": [
+    "all"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:15Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "platform",
+   "ring": "platform",
+   "wave": 1,
+   "layers": [
+    "L4"
+   ],
+   "readiness": "partial",
+   "components": [
+    {
+     "crate": "pub-platform-paths",
+     "kind": "lib",
+     "readiness": "partial"
+    }
+   ],
+   "activity": {
+    "pushed_at": "2026-09-03T21:37:06Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "design-system",
+   "ring": "platform",
+   "wave": 1,
+   "layers": [
+    "L10"
+   ],
+   "readiness": "partial",
+   "components": [
+    {
+     "crate": "pub-design-system-tokens",
+     "kind": "lib",
+     "readiness": "partial"
+    }
+   ],
+   "activity": {
+    "pushed_at": "2026-09-03T22:07:50Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "ui",
+   "ring": "platform",
+   "wave": 2,
+   "layers": [
+    "L10",
+    "L4"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:16Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "doc-model",
+   "ring": "platform",
+   "wave": 1,
+   "layers": [
+    "L12"
+   ],
+   "readiness": "seed",
+   "components": [
+    {
+     "crate": "pub-doc-model-graph",
+     "kind": "lib",
+     "readiness": "seed"
+    }
+   ],
+   "activity": {
+    "pushed_at": "2026-09-03T22:49:21Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "plugin-runtime",
+   "ring": "platform",
+   "wave": 1,
+   "layers": [
+    "L2"
+   ],
+   "readiness": "seed",
+   "components": [
+    {
+     "crate": "pub-plugin-runtime-policy",
+     "kind": "lib",
+     "readiness": "seed"
+    }
+   ],
+   "activity": {
+    "pushed_at": "2026-09-03T23:27:17Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "identity",
+   "ring": "platform",
+   "wave": 1,
+   "layers": [
+    "L6"
+   ],
+   "readiness": "seed",
+   "components": [
+    {
+     "crate": "pub-identity-client",
+     "kind": "lib",
+     "readiness": "seed"
+    }
+   ],
+   "activity": {
+    "pushed_at": "2026-09-04T00:04:34Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "pkg",
+   "ring": "platform",
+   "wave": 1,
+   "layers": [
+    "L4"
+   ],
+   "readiness": "seed",
+   "components": [
+    {
+     "crate": "pub-pkg-store",
+     "kind": "lib",
+     "readiness": "seed"
+    }
+   ],
+   "activity": {
+    "pushed_at": "2026-09-04T00:27:39Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "observe",
+   "ring": "platform",
+   "wave": 1,
+   "layers": [
+    "L8"
+   ],
+   "readiness": "seed",
+   "components": [
+    {
+     "crate": "pub-observe-schema",
+     "kind": "lib",
+     "readiness": "seed"
+    }
+   ],
+   "activity": {
+    "pushed_at": "2026-09-04T00:59:03Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "compiler",
+   "ring": "system",
+   "wave": 1,
+   "layers": [
+    "L2"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:18Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "linker",
+   "ring": "system",
+   "wave": 1,
+   "layers": [
+    "L2"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:19Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "devtools",
+   "ring": "system",
+   "wave": 1,
+   "layers": [
+    "L2"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:19Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "firmware",
+   "ring": "system",
+   "wave": 1,
+   "layers": [
+    "L1"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:21Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "hdl",
+   "ring": "system",
+   "wave": 1,
+   "layers": [
+    "L0"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:21Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "eda",
+   "ring": "system",
+   "wave": 2,
+   "layers": [
+    "L0"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:22Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "silicon",
+   "ring": "system",
+   "wave": 3,
+   "layers": [
+    "L0"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:21Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "kernel",
+   "ring": "system",
+   "wave": 1,
+   "layers": [
+    "L3",
+    "L4"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T08:38:21Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "drivers",
+   "ring": "system",
+   "wave": 2,
+   "layers": [
+    "L3"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:22Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "base",
+   "ring": "system",
+   "wave": 1,
+   "layers": [
+    "L4"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:25Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "virt",
+   "ring": "system",
+   "wave": 2,
+   "layers": [
+    "L3"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:24Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "net",
+   "ring": "system",
+   "wave": 1,
+   "layers": [
+    "L5"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:24Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "sdr",
+   "ring": "system",
+   "wave": 1,
+   "layers": [
+    "L0",
+    "L5"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:25Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "store",
+   "ring": "system",
+   "wave": 1,
+   "layers": [
+    "L7"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:24Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "cloud",
+   "ring": "system",
+   "wave": 1,
+   "layers": [
+    "L8"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:25Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "forge",
+   "ring": "system",
+   "wave": 2,
+   "layers": [
+    "L8"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:26Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "security",
+   "ring": "system",
+   "wave": 1,
+   "layers": [
+    "L6"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:27Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "comms",
+   "ring": "system",
+   "wave": 1,
+   "layers": [
+    "L5",
+    "L12"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:27Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "graphics",
+   "ring": "system",
+   "wave": 1,
+   "layers": [
+    "L9"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:27Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "media",
+   "ring": "system",
+   "wave": 1,
+   "layers": [
+    "L9"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:28Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "js",
+   "ring": "system",
+   "wave": 2,
+   "layers": [
+    "L11"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:28Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "desktop",
+   "ring": "system",
+   "wave": 2,
+   "layers": [
+    "L10"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:29Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "mobile",
+   "ring": "system",
+   "wave": 3,
+   "layers": [
+    "L10"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:30Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "web",
+   "ring": "system",
+   "wave": 1,
+   "layers": [
+    "L11"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:30Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "ai",
+   "ring": "system",
+   "wave": 1,
+   "layers": [
+    "L15"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:30Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "office",
+   "ring": "domain",
+   "wave": 1,
+   "layers": [
+    "L12",
+    "L7"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:30Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "workspace",
+   "ring": "domain",
+   "wave": 1,
+   "layers": [
+    "L12"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:31Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "home",
+   "ring": "domain",
+   "wave": 2,
+   "layers": [
+    "L12",
+    "L10"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:32Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "imaging",
+   "ring": "domain",
+   "wave": 1,
+   "layers": [
+    "L13"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:32Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "video",
+   "ring": "domain",
+   "wave": 3,
+   "layers": [
+    "L13"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:33Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "audio",
+   "ring": "domain",
+   "wave": 2,
+   "layers": [
+    "L13"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:33Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "3d",
+   "ring": "domain",
+   "wave": 2,
+   "layers": [
+    "L13",
+    "L17"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:33Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "cad",
+   "ring": "domain",
+   "wave": 1,
+   "layers": [
+    "L14"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:35Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "engineering",
+   "ring": "domain",
+   "wave": 1,
+   "layers": [
+    "L14"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:34Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "science",
+   "ring": "domain",
+   "wave": 1,
+   "layers": [
+    "L14"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:35Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "business",
+   "ring": "domain",
+   "wave": 2,
+   "layers": [
+    "L16"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:35Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 1
+   }
+  },
+  {
+   "name": "finance",
+   "ring": "domain",
+   "wave": 2,
+   "layers": [
+    "L16"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:36Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "health",
+   "ring": "domain",
+   "wave": 1,
+   "layers": [
+    "L16"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:36Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "civic",
+   "ring": "domain",
+   "wave": 1,
+   "layers": [
+    "L16"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:37Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "games",
+   "ring": "domain",
+   "wave": 1,
+   "layers": [
+    "L17"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:38Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "specs",
+   "ring": "standards",
+   "wave": 1,
+   "layers": [
+    "L18"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:39Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  },
+  {
+   "name": "content",
+   "ring": "standards",
+   "wave": 1,
+   "layers": [
+    "L18"
+   ],
+   "readiness": "no crate yet",
+   "components": [],
+   "activity": {
+    "pushed_at": "2026-09-03T07:08:38Z",
+    "open_issues": 0,
+    "open_prs": 0,
+    "good_first_issues": 0,
+    "latest_release": null,
+    "stars": 0
+   }
+  }
+ ]
+}

@@ -13,10 +13,23 @@ handbook/. --catalog-dir holds catalog.toml and catalog.schema.json: the catalog
 checked out at the lock's ref, or the kit's config/. What has shipped comes from each repository's own CATALOG.toml
 ([[component]] entries: crate, kind, readiness), read through `gh api` at build time, or from local checkouts
 under --repos DIR (offline; what the kit's tests use).
+
+The build also writes state.json at the site root, the one machine-readable state the landing page's map, the
+handbook and agents read:
+
+  {"as_of": "YYYY-MM-DD",                       # the build date
+   "status": "N of M repositories have a first crate, as of YYYY-MM-DD[; K could not be read]",
+   "waves": {"1": {"repositories": 42, "with_crate": 7}, ...},
+   "repositories": [{"name": "kernel", "ring": "system", "wave": 1, "layers": ["L3", "L4"],
+                     "readiness": "partial",   # the highest component readiness (none|seed|partial|shipped),
+                                               # "no crate yet" when none is listed, "unknown" when unreadable
+                     "components": [{"crate": "pub-kernel-core", "kind": "lib", "readiness": "partial"}, ...]},
+                    ...]}                      # components: [] for no crate yet, null for unknown
 """
 import argparse
 import base64
 import hashlib
+import html
 import json
 import re
 import shutil
@@ -36,6 +49,9 @@ RINGS = [
     ("domain", "Domain", "the products"),
     ("standards", "Standards", "living specs and open data"),
 ]
+LAYERS = [f"L{i}" for i in range(19)]                # the ledger, L0 (silicon) to L18 (content)
+BANDS = {"L0": "silicon", "L4": "system", "L8": "platform", "L12": "apps", "L16": "content"}   # the brand's five bands, by first layer
+ALL_LAYERS = "all"                                   # the spine's layer value: the whole ledger
 
 
 def org_env(path: Path) -> dict:
@@ -157,11 +173,153 @@ def status_line(shipped: dict[str, Components], as_of: str) -> str:
     return f"{line}; {unread} could not be read" if unread else line
 
 
+# ---------------------------------------------------------------- state: state.json and the map the landing page draws from it
+
+def state(repos: list[dict], shipped: dict[str, Components], as_of: str) -> dict:
+    """The site's machine-readable state (the shape is in the module docstring)."""
+    waves: dict[str, dict] = {}
+    for r in repos:
+        w = waves.setdefault(str(r["wave"]), {"repositories": 0, "with_crate": 0})
+        w["repositories"] += 1
+        w["with_crate"] += 1 if shipped[r["name"]] else 0
+    entries = [{"name": r["name"], "ring": r["ring"], "wave": r["wave"], "layers": r["layers"],
+                "readiness": repo_readiness(shipped[r["name"]]), "components": shipped[r["name"]]} for r in repos]
+    return {"as_of": as_of, "status": status_line(shipped, as_of), "waves": dict(sorted(waves.items())), "repositories": entries}
+
+
+def verdict(st: dict) -> str:
+    """The 'are we X yet' answer: yes when every repository has shipped, otherwise how far it has come."""
+    entries = st["repositories"]
+    n, with_crate = len(entries), sum(1 for e in entries if e["components"])
+    shipped = sum(1 for e in entries if e["readiness"] == "shipped")
+    if shipped == n:
+        return "Yes."
+    if shipped:
+        return f"Getting there: {shipped} of {n} repositories have shipped a component, and {with_crate} have a first crate."
+    if with_crate:
+        return f"Not yet, but it has started: {with_crate} of {n} repositories have a first crate; none has shipped a component."
+    return f"Not yet: none of the {n} repositories has a first crate."
+
+
+def wave_bars(st: dict) -> str:
+    """One bar per wave: 'wave 1: 7 of 42 repositories have a first crate'."""
+    out = ""
+    for wave, c in st["waves"].items():
+        pct = round(100 * c["with_crate"] / c["repositories"]) if c["repositories"] else 0
+        out += (f'<div class="wave"><span>wave {wave}: {c["with_crate"]} of {c["repositories"]} repositories have a first crate</span>'
+                f'<i><b style="width:{pct}%"></b></i></div>')
+    return out
+
+
+def components_text(parts: Components) -> str:
+    """'crate (kind, readiness), ...' for the tile's title and detail box; the honest word when there is nothing to list."""
+    if parts is None:
+        return UNKNOWN
+    if not parts:
+        return NO_CRATE
+    return ", ".join(f'{p["crate"]} ({p["kind"]}, {p["readiness"]})' for p in parts)
+
+
+def tile(repo: dict, parts: Components) -> str:
+    """One repository on the map: a link to its page, coloured by readiness, carrying its facts for the filter and the detail box."""
+    readiness = repo_readiness(parts)
+    cls = "none" if readiness == NO_CRATE else readiness if readiness in READINESS else UNKNOWN
+    layers, comps = ", ".join(repo["layers"]), html.escape(components_text(parts), quote=True)
+    title = f'{repo["name"]} · {repo["ring"]} ring · wave {repo["wave"]} · {layers} · {readiness} · {comps}'
+    return (f'<a class="tile r-{cls}" href="/{repo["name"]}/" data-wave="{repo["wave"]}" data-ring="{repo["ring"]}" data-layers="{layers}" '
+            f'data-readiness="{readiness}" data-components="{comps}" title="{title}">{repo["name"]}</a>')
+
+
+def ledger_grid(repos: list[dict], shipped: dict[str, Components]) -> str:
+    """The ledger: one row per layer L0–L18 (labelled by band), one column per ring; a repository sits in the row of its first
+    catalog layer, and the spine repositories serving every layer share one cell spanning the whole ledger."""
+    tiles = {r["name"]: tile(r, shipped[r["name"]]) for r in repos}
+    at = {(r["ring"], r["layers"][0]): [] for r in repos}
+    for r in repos:
+        at[(r["ring"], r["layers"][0])].append(tiles[r["name"]])
+    heads = "".join(f'<div class="col{" spine" if k == "spine" else ""}" style="--ring:{RING_COLORS[k]}">{t}</div>' for k, t, _ in RINGS)
+    rows = f'<div class="corner">layer</div>{heads}\n<div class="cell all" data-ring="spine">{"".join(at.get(("spine", ALL_LAYERS), []))}</div>\n'
+    for layer in LAYERS:
+        band = f"<small>{BANDS[layer]}</small>" if layer in BANDS else ""
+        cells = "".join(f'<div class="cell" data-layer="{layer}" data-ring="{k}">{"".join(at.get((k, layer), []))}</div>' for k, _, _ in RINGS)
+        rows += f'<div class="layer"><b>{layer}</b>{band}</div>{cells}\n'
+    return f'<div class="ledger">\n{rows}</div>'
+
+
+STATE_CSS = """
+.verdict { font-size:22px; font-weight:700; letter-spacing:-0.3px; margin:0 0 10px; text-wrap:balance; }
+.bars { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:10px 28px; margin:0 0 20px; }
+.wave span { display:block; font-family:"JetBrains Mono", Menlo, monospace; font-size:12px; color:var(--muted); margin-bottom:5px; overflow-wrap:anywhere; }
+.wave i { display:block; height:8px; border-radius:4px; background:var(--paper); border:1px solid var(--line); overflow:hidden; }
+.wave b { display:block; height:100%; background:var(--blue); min-width:2px; }
+.tools { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin:0 0 12px; }
+.waves { display:flex; gap:6px; } .waves button { font:inherit; font-size:13px; font-weight:600; padding:5px 11px; border:1px solid var(--line); border-radius:7px; background:var(--paper); color:var(--ink); cursor:pointer; }
+.waves button[aria-pressed="true"] { background:var(--blue); border-color:var(--blue); color:#fff; }
+.legend { display:flex; gap:14px; flex-wrap:wrap; font-family:"JetBrains Mono", Menlo, monospace; font-size:11px; color:var(--muted); }
+.legend span { display:inline-flex; align-items:center; gap:6px; } .legend i { width:14px; height:14px; border-radius:3px; display:inline-block; }
+.scroll { overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--paper); }
+.ledger { display:grid; grid-template-columns:82px max-content max-content repeat(4, minmax(120px, 1fr)); gap:2px; min-width:760px; padding:2px; }
+.ledger > div { background:var(--page); min-height:34px; padding:4px 6px; }
+.ledger .corner, .ledger .col { font-family:"JetBrains Mono", Menlo, monospace; font-size:11px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:var(--muted); display:flex; align-items:center; gap:8px; }
+.ledger .col::before { content:""; width:12px; height:12px; border-radius:3px; background:var(--ring); flex:none; } .ledger .col.spine { grid-column:span 2; }
+.ledger .layer { font-family:"JetBrains Mono", Menlo, monospace; font-size:11px; color:var(--muted); display:flex; flex-direction:column; justify-content:center; }
+.ledger .layer b { font-weight:600; color:var(--ink); } .ledger .layer small { font-size:10px; letter-spacing:0.5px; text-transform:uppercase; }
+.ledger .cell { display:flex; flex-wrap:wrap; gap:4px; align-content:center; }
+.ledger .cell.all { grid-column:2; grid-row:2 / span 19; flex-direction:column; justify-content:center; flex-wrap:nowrap; gap:6px; }
+.ledger .cell.all::before { content:"all layers"; font-family:"JetBrains Mono", Menlo, monospace; font-size:10px; letter-spacing:0.5px; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+.tile { font-family:"JetBrains Mono", Menlo, monospace; font-size:11.5px; font-weight:600; padding:3px 8px; border-radius:5px; border:1px solid transparent; color:var(--ink); transition:opacity .12s; }
+.tile:hover, .tile:focus { text-decoration:none; outline:2px solid var(--blue); outline-offset:1px; }
+.r-none, .legend .r-none { background:var(--paper); border-color:var(--line); border-style:dashed; color:var(--muted); }
+.r-seed, .legend .r-seed { background:var(--seed); border-color:var(--seed); }
+.r-partial, .legend .r-partial { background:var(--partial); border-color:var(--partial); color:var(--partial-ink); }
+.r-shipped, .legend .r-shipped { background:var(--blue); border-color:var(--blue); color:#fff; }
+.r-unknown, .legend .r-unknown { background:repeating-linear-gradient(45deg, var(--paper) 0 4px, var(--line) 4px 6px); border-color:var(--line); color:var(--muted); }
+#state[data-wave="1"] .tile:not([data-wave="1"]), #state[data-wave="2"] .tile:not([data-wave="2"]), #state[data-wave="3"] .tile:not([data-wave="3"]), #state[data-wave="4"] .tile:not([data-wave="4"]), #state[data-wave="5"] .tile:not([data-wave="5"]) { opacity:0.15; }
+.detail { margin:12px 0 0; min-height:24px; font-family:"JetBrains Mono", Menlo, monospace; font-size:12.5px; color:var(--muted); }
+.detail b { color:var(--ink); }
+"""
+
+STATE_JS = """<script>
+(function () {
+  var s = document.getElementById('state'), w = s.querySelector('.waves'), d = document.getElementById('detail');
+  w.hidden = false;
+  w.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    s.dataset.wave = b.dataset.wave;
+    w.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+  });
+  function show(t) {
+    var b = document.createElement('b'); b.textContent = t.textContent;
+    d.textContent = ''; d.appendChild(b);
+    d.appendChild(document.createTextNode(' · ' + t.dataset.ring + ' ring · wave ' + t.dataset.wave + ' · ' + t.dataset.layers + ' · ' + t.dataset.readiness + ' · ' + t.dataset.components));
+  }
+  s.addEventListener('mouseover', function (e) { var t = e.target.closest('.tile'); if (t) show(t); });
+  s.addEventListener('focusin', function (e) { var t = e.target.closest('.tile'); if (t) show(t); });
+})();
+</script>"""
+
+
+def state_section(st: dict, repos: list[dict], shipped: dict[str, Components]) -> str:
+    """The landing page's state section: the verdict, one bar per wave, the wave filter and legend, the ledger, the detail box."""
+    buttons = '<button data-wave="all" aria-pressed="true">All waves</button>' + "".join(
+        f'<button data-wave="{w}">Wave {w}</button>' for w in st["waves"])
+    legend = "".join(f'<span><i class="r-{c}"></i>{c}</span>' for c in READINESS + [UNKNOWN])
+    return f"""<section id="state" data-wave="all">
+  <h2>Is the suite built yet?</h2>
+  <p class="verdict">{verdict(st)}</p>
+  <p class="sub">The ledger: every repository in its ring, at the layer it serves first, coloured by what its own <code>CATALOG.toml</code> says has shipped. Rebuilt nightly from the same data as <a href="/state.json">state.json</a>. Hover or focus a tile for its components; click through to the repository.</p>
+  <div class="bars">{wave_bars(st)}</div>
+  <div class="tools"><div class="waves" hidden>{buttons}</div><div class="legend">{legend}</div></div>
+  <div class="scroll">{ledger_grid(repos, shipped)}</div>
+  <div class="detail" id="detail" aria-live="polite">{st["status"]}.</div>
+</section>"""
+
+
 # ---------------------------------------------------------------- landing page
 
 CSS = """
-:root { --page:#FAFAF8; --paper:#F2F3F1; --ink:#14181F; --muted:#5B6472; --line:#DADDD9; --blue:#1F4E8C; --blue-ink:#163B6B; }
-@media (prefers-color-scheme: dark) { :root { --page:#0F141B; --paper:#171D26; --ink:#EEF0EC; --muted:#9AA3AE; --line:#2A323D; --blue:#7FA7DE; --blue-ink:#A9C4EC; } }
+:root { --page:#FAFAF8; --paper:#F2F3F1; --ink:#14181F; --muted:#5B6472; --line:#DADDD9; --blue:#1F4E8C; --blue-ink:#163B6B; --seed:#D6E3F5; --partial:#7FA7DE; --partial-ink:#14181F; }
+@media (prefers-color-scheme: dark) { :root { --page:#0F141B; --paper:#171D26; --ink:#EEF0EC; --muted:#9AA3AE; --line:#2A323D; --blue:#7FA7DE; --blue-ink:#A9C4EC; --seed:#23344D; --partial:#3A5F95; --partial-ink:#EEF0EC; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--page); color:var(--ink); font-family:"Public Sans", system-ui, -apple-system, sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased; }
 a { color:var(--blue); text-decoration:none; } a:hover { text-decoration:underline; }
@@ -215,7 +373,7 @@ footer a { color:var(--ink); }
 GITHUB_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>'
 
 
-def landing(env: dict, repos: list[dict]) -> str:
+def landing(env: dict, repos: list[dict], st: dict, shipped: dict[str, Components]) -> str:
     org, name, cli = env["ORG"], env["ORG_DISPLAY_NAME"], env["CLI"]
     by_ring: dict[str, list[dict]] = {}
     for r in repos:
@@ -244,13 +402,13 @@ def landing(env: dict, repos: list[dict]) -> str:
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/mark-460.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
-<style>{CSS}</style>
+<style>{CSS}{STATE_CSS}</style>
 </head>
 <body>
 <div class="wrap">
 <header class="top">
   <a class="brand" href="/"><img src="/favicon.svg" alt="">{name}</a>
-  <nav><a href="/handbook/">Handbook</a><a href="#suite">The suite</a><a href="https://github.com/{org}/rfcs/pulls">RFCs</a><a href="https://github.com/{org}">GitHub</a></nav>
+  <nav><a href="#state">State</a><a href="/handbook/">Handbook</a><a href="#suite">The suite</a><a href="https://github.com/{org}/rfcs/pulls">RFCs</a><a href="https://github.com/{org}">GitHub</a></nav>
 </header>
 
 <section class="hero" style="border-top:0">
@@ -262,6 +420,8 @@ def landing(env: dict, repos: list[dict]) -> str:
   </div>
   <img src="/assets/ledger.png" alt="The {name} ledger: five slabs, each wider than the one above" width="1000" height="1000">
 </section>
+
+{state_section(st, repos, shipped)}
 
 <section>
   <h2>Start here</h2>
@@ -293,6 +453,7 @@ def landing(env: dict, repos: list[dict]) -> str:
   <div><a href="https://github.com/{org}/.github/blob/main/CODE_OF_CONDUCT.md">Code of conduct</a> · <a href="https://github.com/{org}/.github/blob/main/CONTRIBUTING.md">Contributing</a> · <a href="https://github.com/{org}/{env["DOCS_REPO"]}">Site source</a></div>
 </footer>
 </div>
+{STATE_JS}
 </body>
 </html>
 """
@@ -426,6 +587,8 @@ def repo_page(env: dict, repo: dict, repos: list[dict], shipped: Components) -> 
 
 def suite_md(env: dict, repos: list[dict], shipped: dict[str, Components]) -> str:
     out = ["# The suite", "",
+           f"The [state map]({env['ORG_URL']}/#state) on the site shows every repository as one tile in its ring and layer, coloured by "
+           f"readiness, with the same data behind it as [state.json]({env['ORG_URL']}/state.json).", "",
            "Every repository in the organization, by dependency ring. Generated from the catalog; the readiness column is the highest "
            "readiness among the components each repository's own `CATALOG.toml` lists, read when the site was built.", ""]
     for key, title, blurb in RINGS:
@@ -481,6 +644,8 @@ def llms_txt(env: dict, repos: list[dict]) -> str:
     lines += ["", "## The catalog and the source", "",
               f"- [catalog.toml](https://github.com/{org}/catalog/blob/main/catalog/catalog.toml): the source of truth: every repository, its ring, layers, wave, purpose and planned contents",
               f"- [catalog.schema.json]({url}/catalog.schema.json): the JSON Schema (2020-12) the catalog validates against",
+              f"- [state.json]({url}/state.json): the state of the initiative, rebuilt nightly: the build date, the status line, per repository "
+              f"its ring, wave, layers, readiness and components, and per wave how many repositories have a first crate",
               f"- [Site source](https://github.com/{org}/{env['DOCS_REPO']}): site/build.py, the handbook and the Pages workflow that builds this site",
               f"- [RFCs](https://github.com/{org}/rfcs): every decision that crosses a repository, with its decision record"]
     for key, title, blurb in RINGS:
@@ -496,15 +661,17 @@ def build(env: dict, catalog_dir: Path, brand: Path, repos_dir: Path | None, out
     load_brand(brand)
     repos = load_catalog(catalog_dir)
     shipped = components(env, repos, repos_dir)
-    env["STATUS_LINE"] = status_line(shipped, date.today().isoformat())
+    st = state(repos, shipped, date.today().isoformat())
+    env["STATUS_LINE"] = st["status"]
     if out.exists():
         shutil.rmtree(out)
     www = out / "www"
     (www / "assets" / "marks").mkdir(parents=True)
     (www / ".well-known").mkdir(parents=True)
-    (www / "index.html").write_text(landing(env, repos))
+    (www / "index.html").write_text(landing(env, repos, st, shipped))
+    (www / "state.json").write_text(json.dumps(st, indent=1) + "\n")
     (www / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {env['ORG_URL']}/sitemap.txt\n")
-    (www / "sitemap.txt").write_text("".join(f"{env['ORG_URL']}/{p}\n" for p in ["", "handbook/", "llms.txt"] + [f"{r['name']}/" for r in repos]))
+    (www / "sitemap.txt").write_text("".join(f"{env['ORG_URL']}/{p}\n" for p in ["", "handbook/", "llms.txt", "state.json"] + [f"{r['name']}/" for r in repos]))
     (www / "llms.txt").write_text(llms_txt(env, repos))
     (www / ".well-known" / "security.txt").write_text(security_txt(env))
     (www / ".well-known" / "wasm-pkg").mkdir()

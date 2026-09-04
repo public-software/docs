@@ -621,16 +621,22 @@ def components_html(env: dict, name: str, parts: Components) -> str:
     return f'<p class="sub">What this repository publishes, from its own <code>CATALOG.toml</code>.</p><div class="chips">{chips}</div>'
 
 
-def part_shipped(part: str, parts: Components) -> bool:
-    """A planned part has a first crate when a component is named after its first word (exactly, or as a prefix with '-')."""
+def part_shipped(part: str, parts: Components, tokens: list[str]) -> bool:
+    """A planned part has a first crate when a component is named after its first word: exactly, or (for a hyphenated
+    word such as pub-kernel) as the prefix of a crate no other planned part names exactly. A bare word such as `pub`
+    never claims every pub-* crate."""
     token = part.split()[0].lower()
-    return any(p["crate"] == token or p["crate"].startswith(token + "-") for p in parts or [])
+    crates = [p["crate"] for p in parts or []]
+    if token in crates:
+        return True
+    return "-" in token and any(c.startswith(token + "-") and c not in tokens for c in crates)
 
 
 def planned_html(repo: dict, parts: Components) -> str:
     """The catalog's planned contents as a checklist against what has shipped, with the count line."""
     planned = [p.strip() for p in repo["contents"].split("·") if p.strip()]
-    done = [part_shipped(p, parts) for p in planned]
+    tokens = [p.split()[0].lower() for p in planned]
+    done = [part_shipped(p, parts, tokens) for p in planned]
     items = "".join(f'<li class="done">{p}</li>' if d else f"<li>{p}</li>" for p, d in zip(planned, done))
     return (f'<p class="sub">What this repository will contain, from the catalog: {sum(done)} of {len(planned)} planned parts have a first crate.</p>'
             f'<ul class="plan">{items}</ul>')

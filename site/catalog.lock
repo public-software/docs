@@ -1,8 +1,8 @@
 # The catalog this site is built from: public-software/catalog, checked out by the Pages workflow at `ref`. site/build.py
 # refuses to build when catalog/catalog.toml in that checkout does not hash to `sha256`, so the site never drifts
 # silently from the catalog its pages were written against. The bootstrap kit renders this file and pushes it with
-# the catalog itself (step 05), so the two move together; `ref` becomes the release tag vv1.0.0 once
-# that release exists.
+# the catalog itself (step 05), so the two move together: `ref` is the immutable release tag CATALOG_VERSION of
+# config/org.env, so a catalog change ships as a new release and a new lock, never as a moving branch.
 repo   = "public-software/catalog"
-ref    = "main"
+ref    = "v1.0.0"
 sha256 = "ed208f7d5848d0589bb76981626554118a7d4e296886b8ff5939b7ff1a652798"

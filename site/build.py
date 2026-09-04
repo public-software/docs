@@ -2,7 +2,7 @@
 """The public site: a landing page in the identity, one page per repository and the mdBook handbook,
 built and deployed by this repository's Pages workflow (.github/workflows/pages.yml).
 
-  python3 site/build.py build  --catalog-dir DIR [--repos DIR] [--out DIR]   # → <out>/www/ (the pages) and <out>/handbook/ (mdBook source)
+  python3 site/build.py build  --catalog-dir DIR [--repos DIR] [--activity FILE] [--out DIR]   # → <out>/www/ (the pages) and <out>/handbook/ (mdBook source)
   python3 site/build.py status --catalog-dir DIR [--repos DIR]               # the readiness count line the org profile README carries
   python3 site/build.py readiness --catalog-dir DIR [--repos DIR]            # name<TAB>readiness per repository (what the Roadmap project mirrors)
 
@@ -23,8 +23,12 @@ handbook and agents read:
    "repositories": [{"name": "kernel", "ring": "system", "wave": 1, "layers": ["L3", "L4"],
                      "readiness": "partial",   # the highest component readiness (none|seed|partial|shipped),
                                                # "no crate yet" when none is listed, "unknown" when unreadable
-                     "components": [{"crate": "pub-kernel-core", "kind": "lib", "readiness": "partial"}, ...]},
-                    ...]}                      # components: [] for no crate yet, null for unknown
+                     "components": [{"crate": "pub-kernel-core", "kind": "lib", "readiness": "partial"}, ...],
+                     "activity": {"pushed_at": "2026-09-01T08:38:21Z", "open_issues": 3, "open_prs": 1,
+                                  "good_first_issues": 2, "latest_release": "v0.1.0", "stars": 12}},
+                    ...]}                      # components: [] for no crate yet, null for unknown;
+                                               # activity: GitHub at build time (one GraphQL query per batch of
+                                               # repositories through gh, or --activity FILE offline), null when unread
 """
 import argparse
 import base64
@@ -173,17 +177,64 @@ def status_line(shipped: dict[str, Components], as_of: str) -> str:
     return f"{line}; {unread} could not be read" if unread else line
 
 
+# ---------------------------------------------------------------- activity: what GitHub says is happening in each repository
+
+Activity = dict | None                               # None: GitHub could not be read
+ACTIVITY_BATCH = 25                                  # repositories per GraphQL query (one point each; 5,000 an hour)
+GOOD_FIRST_ISSUE = "good first issue"
+ACTIVITY_FIELDS = ("pushedAt stargazerCount issues(states: OPEN) { totalCount } pullRequests(states: OPEN) { totalCount } "
+                   f'gfi: issues(states: OPEN, labels: ["{GOOD_FIRST_ISSUE}"]) {{ totalCount }} latestRelease {{ tagName }}')
+
+
+def activity_query(org: str, names: list[str]) -> str:
+    """One GraphQL query with an alias per repository (names come from the validated catalog)."""
+    return "{ " + " ".join(f'r{i}: repository(owner: "{org}", name: "{n}") {{ {ACTIVITY_FIELDS} }}' for i, n in enumerate(names)) + " }"
+
+
+def parse_activity(node: dict | None) -> Activity:
+    """The repository node of the query into the state.json shape; None for a missing repository."""
+    if not isinstance(node, dict):
+        return None
+    release = node.get("latestRelease") or {}
+    return {"pushed_at": node.get("pushedAt"), "open_issues": node["issues"]["totalCount"], "open_prs": node["pullRequests"]["totalCount"],
+            "good_first_issues": node["gfi"]["totalCount"], "latest_release": release.get("tagName"), "stars": node.get("stargazerCount", 0)}
+
+
+def fetch_activity(org: str, names: list[str]) -> dict[str, Activity]:
+    """One batch through `gh api graphql`; every repository of a failed query is None."""
+    r = subprocess.run(["gh", "api", "graphql", "-f", f"query={activity_query(org, names)}"], capture_output=True, text=True)
+    if r.returncode != 0:
+        return {n: None for n in names}
+    try:
+        data = json.loads(r.stdout).get("data") or {}
+    except ValueError:
+        return {n: None for n in names}
+    return {n: parse_activity(data.get(f"r{i}")) for i, n in enumerate(names)}
+
+
+def activity(env: dict, repos: list[dict], activity_file: Path | None) -> dict[str, Activity]:
+    """name → activity, from --activity FILE (offline) or from GitHub in batches; missing entries are None."""
+    names = [r["name"] for r in repos]
+    if activity_file is not None:
+        known = json.loads(activity_file.read_text())
+        return {n: known.get(n) for n in names}
+    out: dict[str, Activity] = {}
+    for i in range(0, len(names), ACTIVITY_BATCH):
+        out.update(fetch_activity(env["ORG"], names[i:i + ACTIVITY_BATCH]))
+    return out
+
+
 # ---------------------------------------------------------------- state: state.json and the map the landing page draws from it
 
-def state(repos: list[dict], shipped: dict[str, Components], as_of: str) -> dict:
+def state(repos: list[dict], shipped: dict[str, Components], acts: dict[str, Activity], as_of: str) -> dict:
     """The site's machine-readable state (the shape is in the module docstring)."""
     waves: dict[str, dict] = {}
     for r in repos:
         w = waves.setdefault(str(r["wave"]), {"repositories": 0, "with_crate": 0})
         w["repositories"] += 1
         w["with_crate"] += 1 if shipped[r["name"]] else 0
-    entries = [{"name": r["name"], "ring": r["ring"], "wave": r["wave"], "layers": r["layers"],
-                "readiness": repo_readiness(shipped[r["name"]]), "components": shipped[r["name"]]} for r in repos]
+    entries = [{"name": r["name"], "ring": r["ring"], "wave": r["wave"], "layers": r["layers"], "readiness": repo_readiness(shipped[r["name"]]),
+                "components": shipped[r["name"]], "activity": acts.get(r["name"])} for r in repos]
     return {"as_of": as_of, "status": status_line(shipped, as_of), "waves": dict(sorted(waves.items())), "repositories": entries}
 
 
@@ -482,33 +533,120 @@ table.parts code { font-family:"JetBrains Mono", Menlo, monospace; font-size:13p
 .siblings { display:flex; gap:10px; flex-wrap:wrap; }
 .siblings a { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--line); border-radius:10px; color:var(--ink); font-family:"JetBrains Mono", Menlo, monospace; font-size:13px; }
 .siblings svg { width:28px; height:28px; border-radius:6px; background:var(--paper); }
-@media (max-width:720px) { .rhero { grid-template-columns:1fr; } ul.parts { columns:1; } }
+.hchips { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:0 0 16px; font-family:"JetBrains Mono", Menlo, monospace; font-size:12px; color:var(--muted); }
+.chip { display:inline-flex; align-items:center; gap:8px; padding:4px 10px; border-radius:6px; border:1px solid transparent; font-family:"JetBrains Mono", Menlo, monospace; font-size:12.5px; font-weight:600; color:var(--ink); }
+.chip code { font-size:12.5px; } .chip span { font-weight:400; opacity:0.85; }
+.chip span::before { content:"·"; margin-right:8px; }
+.chips { display:flex; gap:8px; flex-wrap:wrap; }
+.strip { display:grid; grid-template-columns:repeat(19, 1fr); gap:3px; margin:0 0 6px; }
+.lyr { height:34px; border-radius:5px; background:var(--paper); border:1px solid var(--line); font-family:"JetBrains Mono", Menlo, monospace; font-size:10px; color:var(--muted); display:flex; align-items:center; justify-content:center; }
+.lyr.on { background:var(--ring); border-color:var(--ring); color:#fff; font-weight:600; }
+.bands { display:grid; grid-template-columns:repeat(19, 1fr); gap:3px; margin:0 0 18px; font-family:"JetBrains Mono", Menlo, monospace; font-size:10px; letter-spacing:0.5px; text-transform:uppercase; color:var(--muted); }
+.bands span { text-align:center; border-top:2px solid var(--line); padding-top:4px; }
+.rings { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px; }
+.pill { display:inline-flex; align-items:center; gap:8px; padding:5px 12px; border-radius:999px; border:1px solid var(--line); font-family:"JetBrains Mono", Menlo, monospace; font-size:12px; color:var(--muted); }
+.pill::before { content:""; width:10px; height:10px; border-radius:3px; background:var(--ring); }
+.pill.on { background:var(--ring); border-color:var(--ring); color:#fff; font-weight:600; } .pill.on::before { background:#fff; }
+.pill:hover { text-decoration:none; border-color:var(--ring); }
+.peers { display:flex; gap:6px; flex-wrap:wrap; }
+ul.plan { list-style:none; padding:0; margin:0; columns:2; gap:32px; } ul.plan li { margin:0 0 8px; padding-left:26px; position:relative; break-inside:avoid; color:var(--muted); }
+ul.plan li::before { content:""; position:absolute; left:0; top:4px; width:14px; height:14px; border-radius:4px; border:1.5px dashed var(--line); }
+ul.plan li.done { color:var(--ink); } ul.plan li.done::before { border:0; background:var(--blue); }
+ul.plan li.done::after { content:""; position:absolute; left:4.5px; top:6px; width:4px; height:8px; border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg); }
+@media (max-width:720px) { .rhero { grid-template-columns:1fr; } ul.parts, ul.plan { columns:1; } .lyr { font-size:0; height:14px; } .bands { font-size:0; } }
 """
 
 
+def band_of(layer: str) -> str:
+    """The brand's band a layer belongs to (silicon, system, platform, apps, content)."""
+    return next(b for first, b in reversed(BANDS.items()) if int(layer[1:]) >= int(first[1:]))
+
+
+def ledger_strip(repo: dict) -> str:
+    """The 19 layers as a strip, lit in the ring colour for the ones this repository serves ('all' lights every one)."""
+    lit = set(LAYERS) if ALL_LAYERS in repo["layers"] else set(repo["layers"])
+    cells = "".join(f'<span class="lyr{" on" if layer in lit else ""}" title="{layer} · {band_of(layer)}">{layer}</span>' for layer in LAYERS)
+    firsts = list(BANDS) + ["L19"]
+    bands = "".join(f'<span style="grid-column:span {int(firsts[i + 1][1:]) - int(f[1:])}">{b}</span>' for i, (f, b) in enumerate(BANDS.items()))
+    return f'<div class="strip" style="--ring:{RING_COLORS[repo["ring"]]}">{cells}</div><div class="bands">{bands}</div>'
+
+
+def ring_pills(ring: str) -> str:
+    """The five rings as pills, this repository's filled."""
+    return '<div class="rings">' + "".join(
+        f'<a class="pill{" on" if k == ring else ""}" style="--ring:{RING_COLORS[k]}" href="/#suite">{t}</a>' for k, t, _ in RINGS) + "</div>"
+
+
+def layer_peers(repo: dict, repos: list[dict]) -> list[dict]:
+    """The other repositories sharing a layer: for an 'all' repository the other 'all' repositories, else any overlap."""
+    mine = set(repo["layers"])
+    if ALL_LAYERS in mine:
+        return [r for r in repos if r["name"] != repo["name"] and ALL_LAYERS in r["layers"]]
+    return [r for r in repos if r["name"] != repo["name"] and mine & set(r["layers"])]
+
+
+def days_ago(pushed_at: str, today: date) -> str:
+    """'today', 'yesterday' or 'N days ago' for an ISO timestamp."""
+    n = (today - date.fromisoformat(pushed_at[:10])).days
+    return "today" if n == 0 else "yesterday" if n == 1 else f"{n} days ago"
+
+
+def activity_html(env: dict, name: str, act: Activity, as_of: str) -> str:
+    """What GitHub says is happening in the repository, or the honest sentence when it could not be read."""
+    if act is None:
+        return "<p class=\"sub\">GitHub could not be read when the site was built, so its activity is unknown.</p>"
+    gh = f"https://github.com/{env['ORG']}/{name}"
+    pushed = f'{act["pushed_at"][:10]} ({days_ago(act["pushed_at"], date.fromisoformat(as_of))})' if act.get("pushed_at") else "never"
+    release = f'<a href="{gh}/releases/latest">{act["latest_release"]}</a>' if act.get("latest_release") else "no release yet"
+    return (f'<p class="sub">From GitHub, as of {as_of}. The nightly build refreshes it.</p><div class="facts">'
+            f'<div class="fact"><b>Last push</b><span>{pushed}</span></div>'
+            f'<div class="fact"><b>Open issues</b><span><a href="{gh}/issues">{act["open_issues"]}</a></span></div>'
+            f'<div class="fact"><b>Open pull requests</b><span><a href="{gh}/pulls">{act["open_prs"]}</a></span></div>'
+            f'<div class="fact"><b>Good first issues</b><span><a href="{gh}/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22">{act["good_first_issues"]}</a></span></div>'
+            f'<div class="fact"><b>Latest release</b><span>{release}</span></div>'
+            f'<div class="fact"><b>Stars</b><span>{act["stars"]}</span></div></div>')
+
+
 def components_html(env: dict, name: str, parts: Components) -> str:
-    """The shipped components of one repository: a table, or the honest sentence when there are none or it is unknown."""
+    """The shipped components of one repository as readiness chips, or the honest sentence when there are none or it is unknown."""
     if parts is None:
         return '<p class="sub">This repository\'s <code>CATALOG.toml</code> could not be read when the site was built, so what it publishes is unknown.</p>'
     if not parts:
         return f'<p class="sub">No crate yet. The first release train is {env["FIRST_TRAIN"]}.</p>'
-    rows = "".join(
-        f'<tr><td><a href="https://github.com/{env["ORG"]}/{name}/tree/main/crates/{p["crate"]}"><code>{p["crate"]}</code></a></td>'
-        f'<td>{p["kind"]}</td><td>{p["readiness"]}</td></tr>'
+    chips = "".join(
+        f'<a class="chip r-{p["readiness"] if p["readiness"] in READINESS else UNKNOWN}" href="https://github.com/{env["ORG"]}/{name}/tree/main/crates/{p["crate"]}">'
+        f'<code>{p["crate"]}</code><span>{p["kind"]}</span><span>{p["readiness"]}</span></a>'
         for p in parts
     )
-    return (f'<p class="sub">What this repository publishes, from its own <code>CATALOG.toml</code>.</p>'
-            f'<table class="parts"><thead><tr><th>Crate</th><th>Kind</th><th>Readiness</th></tr></thead><tbody>{rows}</tbody></table>')
+    return f'<p class="sub">What this repository publishes, from its own <code>CATALOG.toml</code>.</p><div class="chips">{chips}</div>'
 
 
-def repo_page(env: dict, repo: dict, repos: list[dict], shipped: Components) -> str:
+def part_shipped(part: str, parts: Components) -> bool:
+    """A planned part has a first crate when a component is named after its first word (exactly, or as a prefix with '-')."""
+    token = part.split()[0].lower()
+    return any(p["crate"] == token or p["crate"].startswith(token + "-") for p in parts or [])
+
+
+def planned_html(repo: dict, parts: Components) -> str:
+    """The catalog's planned contents as a checklist against what has shipped, with the count line."""
+    planned = [p.strip() for p in repo["contents"].split("·") if p.strip()]
+    done = [part_shipped(p, parts) for p in planned]
+    items = "".join(f'<li class="done">{p}</li>' if d else f"<li>{p}</li>" for p, d in zip(planned, done))
+    return (f'<p class="sub">What this repository will contain, from the catalog: {sum(done)} of {len(planned)} planned parts have a first crate.</p>'
+            f'<ul class="plan">{items}</ul>')
+
+
+def repo_page(env: dict, repo: dict, repos: list[dict], shipped: dict[str, Components], acts: dict[str, Activity], as_of: str) -> str:
     org, name = env["ORG"], repo["name"]
     ring = repo["ring"]
     ring_title = next(t for k, t, _ in RINGS if k == ring)
-    parts = [p.strip() for p in repo["contents"].split("·") if p.strip()]
+    parts = shipped[name]
+    readiness = repo_readiness(parts)
     siblings = [r for r in repos if r["ring"] == ring and r["name"] != name]
     sib_html = "".join(f'<a href="/{r["name"]}/">{transparent(contour_mark(r, "paper"))}{r["name"]}</a>' for r in siblings)
+    peers_html = "".join(tile(r, shipped[r["name"]]) for r in layer_peers(repo, repos)) or "<span class=\"sub\">none</span>"
     layers = ", ".join(repo["layers"])
+    serves = "every layer of the ledger" if ALL_LAYERS in repo["layers"] else f"layer{'s' if len(repo['layers']) > 1 else ''} {layers}"
     why = METAPHORS[name]["why"]
     return f"""<!doctype html>
 <html lang="en">
@@ -522,13 +660,13 @@ def repo_page(env: dict, repo: dict, repos: list[dict], shipped: Components) -> 
 <meta property="og:image" content="{env["ORG_URL"]}/assets/social.png">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
-<style>{CSS}{REPO_CSS}</style>
+<style>{CSS}{STATE_CSS}{REPO_CSS}</style>
 </head>
 <body>
 <div class="wrap">
 <header class="top">
   <a class="brand" href="/"><img src="/favicon.svg" alt="">{env["ORG_DISPLAY_NAME"]}</a>
-  <nav><a href="/handbook/">Handbook</a><a href="/#suite">The suite</a><a href="https://github.com/{org}/rfcs/pulls">RFCs</a><a href="https://github.com/{org}">GitHub</a></nav>
+  <nav><a href="/#state">State</a><a href="/handbook/">Handbook</a><a href="/#suite">The suite</a><a href="https://github.com/{org}/rfcs/pulls">RFCs</a><a href="https://github.com/{org}">GitHub</a></nav>
 </header>
 <div class="crumbs"><a href="/">{env["ORG_DISPLAY_NAME"]}</a> / <a href="/#suite">{ring_title.lower()} ring</a> / {name}</div>
 
@@ -538,6 +676,7 @@ def repo_page(env: dict, repo: dict, repos: list[dict], shipped: Components) -> 
     <div class="ringtag"><i style="background:{RING_COLORS[ring]}"></i>{ring_title} ring</div>
     <h1>{name}</h1>
     <p class="lede">{repo["purpose"]}</p>
+    <div class="hchips"><span class="chip r-{"none" if readiness == NO_CRATE else readiness if readiness in READINESS else UNKNOWN}">{readiness}</span><span>wave {repo["wave"]} · {layers}</span><a href="/#state">on the map</a></div>
     <div class="links"><a class="primary" href="https://github.com/{org}/{name}">Repository</a><a href="https://github.com/{org}/{name}/issues">Issues</a><a href="https://github.com/{org}/{name}/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22">Good first issues</a></div>
   </div>
 </section>
@@ -547,21 +686,34 @@ def repo_page(env: dict, repo: dict, repos: list[dict], shipped: Components) -> 
     <div class="fact"><b>Layers</b><span>{layers}</span></div>
     <div class="fact"><b>Wave</b><span>{repo["wave"]}</span></div>
     <div class="fact"><b>Tier</b><span>incubating</span></div>
-    <div class="fact"><b>Readiness</b><span>{repo_readiness(shipped)}</span></div>
+    <div class="fact"><b>Readiness</b><span>{readiness}</span></div>
     <div class="fact"><b>Maintainers</b><span><a href="https://github.com/orgs/{org}/teams/maint-{name}">maint-{name}</a></span></div>
     <div class="fact"><b>Licence</b><span>{env["LICENSE_SPDX"]}</span></div>
   </div>
 </section>
 
 <section>
+  <h2>Where it sits</h2>
+  <p class="sub">{name} serves {serves}, in the {ring_title.lower()} ring. Dependencies point inward only, and across rings only on the platform ring.</p>
+  {ledger_strip(repo)}
+  {ring_pills(ring)}
+  <p class="sub">Shares a layer with, coloured by readiness as on <a href="/#state">the map</a>:</p>
+  <div class="peers">{peers_html}</div>
+</section>
+
+<section>
+  <h2>Activity</h2>
+  {activity_html(env, name, acts.get(name), as_of)}
+</section>
+
+<section>
   <h2>Components</h2>
-  {components_html(env, name, shipped)}
+  {components_html(env, name, parts)}
 </section>
 
 <section>
   <h2>Planned components</h2>
-  <p class="sub">What this repository will contain, from the catalog.</p>
-  <ul class="parts">{"".join(f"<li>{p}</li>" for p in parts)}</ul>
+  {planned_html(repo, parts)}
 </section>
 
 <section>
@@ -656,12 +808,13 @@ def llms_txt(env: dict, repos: list[dict]) -> str:
 
 # ---------------------------------------------------------------- build
 
-def build(env: dict, catalog_dir: Path, brand: Path, repos_dir: Path | None, out: Path) -> Path:
+def build(env: dict, catalog_dir: Path, brand: Path, repos_dir: Path | None, activity_file: Path | None, out: Path) -> Path:
     """<out>/www: every page and asset the site serves; <out>/handbook: the mdBook source mdbook builds into www/handbook."""
     load_brand(brand)
     repos = load_catalog(catalog_dir)
     shipped = components(env, repos, repos_dir)
-    st = state(repos, shipped, date.today().isoformat())
+    acts = activity(env, repos, activity_file)
+    st = state(repos, shipped, acts, date.today().isoformat())
     env["STATUS_LINE"] = st["status"]
     if out.exists():
         shutil.rmtree(out)
@@ -684,7 +837,7 @@ def build(env: dict, catalog_dir: Path, brand: Path, repos_dir: Path | None, out
         (www / "assets" / "marks" / f"{r['name']}.svg").write_text(transparent(contour_mark(r, "paper")) + "\n")
         shutil.copy(brand / "repos" / f"{r['name']}.png", www / "assets" / "marks" / f"{r['name']}.png")
         (www / r["name"]).mkdir()
-        (www / r["name"] / "index.html").write_text(repo_page(env, r, repos, shipped[r["name"]]))
+        (www / r["name"] / "index.html").write_text(repo_page(env, r, repos, shipped, acts, st["as_of"]))
     book = out / "handbook"
     (book / "src").mkdir(parents=True)
     for f in HERE.glob("handbook/*"):
@@ -705,6 +858,7 @@ def main(argv: list[str]) -> None:
     ap.add_argument("--brand", type=Path, metavar="DIR", default=HERE / "brand", help="the vendored brand modules and PNGs (default: brand/ next to this file)")
     ap.add_argument("--lock", type=Path, metavar="FILE", default=HERE / "catalog.lock", help="the catalog lock `build` checks the catalog against (default: catalog.lock next to this file)")
     ap.add_argument("--repos", type=Path, metavar="DIR", help="read each repository's CATALOG.toml from the checkout <DIR>/<name> instead of gh api")
+    ap.add_argument("--activity", type=Path, metavar="FILE", help="read each repository's GitHub activity from this JSON file (name → activity) instead of gh api graphql")
     ap.add_argument("--out", type=Path, metavar="DIR", default=DEFAULT_OUT, help=f"where `build` writes (default: {DEFAULT_OUT})")
     a = ap.parse_args(argv)
     env = org_env(a.org_env)
@@ -715,7 +869,7 @@ def main(argv: list[str]) -> None:
             print(f"{name}\t{repo_readiness(parts)}")
     else:
         check_lock(a.catalog_dir, a.lock)
-        build(env, a.catalog_dir, a.brand, a.repos, a.out)
+        build(env, a.catalog_dir, a.brand, a.repos, a.activity, a.out)
 
 
 if __name__ == "__main__":

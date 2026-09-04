@@ -47,8 +47,24 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 site/build.py build --catalog-dir catalog/catalog --history state/history --out target/site
+      # the handbook folds in every repository's docs/ (its book, its decision records): a shallow checkout of each
+      # repository the catalog lists, then this repository's own crate assembles the tree and checks every link
+      - name: Every repository the catalog lists, shallow (public repositories, no token)
+        env:
+          ORG: public-software
+        run: |
+          set -euo pipefail
+          mkdir -p checkouts
+          python3 -c 'import sys, tomllib; print("\n".join(r["name"] for r in tomllib.load(open(sys.argv[1], "rb"))["repo"]))' catalog/catalog/catalog.toml \
+            | xargs -P 8 -I{} git clone -q --depth 1 "https://github.com/${ORG}/{}.git" "checkouts/{}"
+      - run: rustup update --no-self-update stable && rustup default stable   # the runner ships rustup
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: Build docs-aggregate, this repository's own crate
+        run: cargo build --release --locked -p pub-docs-aggregate
+      - name: Fold every repository's docs/ and decision records into the handbook (a dangling link fails here, named)
+        run: target/release/docs-aggregate --catalog catalog/catalog/catalog.toml --repos checkouts --handbook target/site/handbook --out target/site/handbook-full
       - name: Build the handbook
-        run: ./mdbook build target/site/handbook -d "$PWD/target/site/www/handbook"
+        run: ./mdbook build target/site/handbook-full -d "$PWD/target/site/www/handbook"
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

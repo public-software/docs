@@ -24,12 +24,13 @@ python3 site/build.py status --catalog-dir ../catalog/catalog                   
 
 - `site/build.py`: the landing page with the state map and the burn-up, one page per repository, `llms.txt`, `state.json`, `state/history.json`, the sitemap and the `.well-known` files.
 - `site/handbook/`: the mdBook source of the handbook.
+- `crates/pub-docs-aggregate`: the `docs-aggregate` command. The workflow checks every catalog repository out and runs it over the handbook. It adds a Repositories part with one chapter per repository: its `docs/` book when it has one and its decision records from `docs/adr/`. A dangling link in that tree fails the build and names the page and the link.
 - `site/org.env`, `site/catalog.lock` and `site/brand/`: the organization values, the catalog pin and the brand modules, all rendered by the bootstrap kit. Do not edit them here.
 - The `state` branch: the record the burn-up is drawn from. The `history` job of the workflow writes one `state.json` per day under `history/` on that branch, once per day. No ruleset guards the branch, so the workflow token can push there. Deleting the branch only loses the chart; the next run starts a new record.
 
 ## What it does not do (yet)
 
-The site does not read the Roadmap project. The chart shows repositories with a first crate; it does not show issues or pull requests.
+The site does not read the Roadmap project. The chart shows repositories with a first crate; it does not show issues or pull requests. A repository without a `docs/` book or a decision record gets an index page only.
 
 ## Status
 

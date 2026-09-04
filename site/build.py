@@ -2,7 +2,7 @@
 """The public site: a landing page in the identity, one page per repository and the mdBook handbook,
 built and deployed by this repository's Pages workflow (.github/workflows/pages.yml).
 
-  python3 site/build.py build  --catalog-dir DIR [--repos DIR] [--activity FILE] [--out DIR]   # → <out>/www/ (the pages) and <out>/handbook/ (mdBook source)
+  python3 site/build.py build  --catalog-dir DIR [--repos DIR] [--activity FILE] [--history DIR] [--out DIR]   # → <out>/www/ (the pages) and <out>/handbook/ (mdBook source)
   python3 site/build.py status --catalog-dir DIR [--repos DIR]               # the readiness count line the org profile README carries
   python3 site/build.py readiness --catalog-dir DIR [--repos DIR]            # name<TAB>readiness per repository (what the Roadmap project mirrors)
 
@@ -29,6 +29,16 @@ handbook and agents read:
                     ...]}                      # components: [] for no crate yet, null for unknown;
                                                # activity: GitHub at build time (one GraphQL query per batch of
                                                # repositories through gh, or --activity FILE offline), null when unread
+
+and state/history.json, the series the landing page's burn-up is drawn from. The Pages workflow keeps one state.json
+per day as history/YYYY-MM-DD.json on the `state` branch of this repository (unguarded by the rulesets, so no bypass
+actor); --history DIR reads that directory and today's build is the last point:
+
+  {"since": "YYYY-MM-DD", "as_of": "YYYY-MM-DD", "days": 3,   # days: recorded days, today included
+   "repositories": 57,                                        # the suite's size at the last point
+   "points": [{"date": "YYYY-MM-DD", "repositories": 57, "with_crate": 9,
+               "readiness": {"none": 0, "seed": 4, "partial": 5, "shipped": 0},   # the repositories with a first crate, by readiness
+               "waves": {"1": {"repositories": 42, "with_crate": 7}, ...}}, ...]}
 """
 import argparse
 import base64
@@ -350,8 +360,150 @@ STATE_JS = """<script>
 </script>"""
 
 
-def state_section(st: dict, repos: list[dict], shipped: dict[str, Components]) -> str:
-    """The landing page's state section: the verdict, one bar per wave, the wave filter and legend, the ledger, the detail box."""
+# ---------------------------------------------------------------- history: one state.json per day, the series and the burn-up
+
+HISTORY_JSON = "state/history.json"
+STACK_ORDER = ["shipped", "partial", "seed", "none"]   # the areas, bottom to top: what has shipped carries the rest
+WAVE_DASHES = ["", "6 3", "2 3", "8 3 2 3", "1 3"]    # one stroke pattern per wave, so the lines need no colour
+BURNUP_W, BURNUP_H = 720, 240
+BURNUP_PAD = {"left": 44, "right": 76, "top": 14, "bottom": 30}
+LABEL_GAP = 12                                        # the least distance between two wave labels, in SVG units
+
+
+def history_point(st: dict) -> dict:
+    """One point of the series from one day's state.json: the repositories with a first crate, by readiness and per wave."""
+    by_readiness = {r: 0 for r in READINESS}
+    waves: dict[str, dict] = {}
+    for e in st["repositories"]:
+        w = waves.setdefault(str(e["wave"]), {"repositories": 0, "with_crate": 0})
+        w["repositories"] += 1
+        if e.get("components"):                       # a first crate, as state() counts it
+            w["with_crate"] += 1
+            by_readiness[e["readiness"]] = by_readiness.get(e["readiness"], 0) + 1
+    return {"date": st["as_of"], "repositories": len(st["repositories"]), "with_crate": sum(by_readiness.values()),
+            "readiness": by_readiness, "waves": dict(sorted(waves.items()))}
+
+
+def history(history_dir: Path | None, st: dict) -> dict:
+    """The series served at state/history.json: every recorded day under --history DIR, then today's build (which replaces a record of the same day)."""
+    points: dict[str, dict] = {}
+    for f in sorted(history_dir.glob("*.json")) if history_dir is not None and history_dir.is_dir() else []:
+        try:
+            day = json.loads(f.read_text())
+            points[day["as_of"]] = history_point(day)
+        except (json.JSONDecodeError, KeyError, TypeError) as e:
+            print(f"  ! {f}: not a state.json ({e}), left out of the series", file=sys.stderr)
+    points[st["as_of"]] = history_point(st)
+    series = [points[d] for d in sorted(points)]
+    return {"since": series[0]["date"], "as_of": st["as_of"], "days": len(series), "repositories": series[-1]["repositories"], "points": series}
+
+
+def burnup_axes(hist: dict) -> tuple:
+    """The x and y scales of the chart: calendar days since the first point (one point sits in the middle), 0 to every repository."""
+    pts = hist["points"]
+    n_total = max(hist["repositories"], 1)
+    first = date.fromisoformat(pts[0]["date"])
+    span = max((date.fromisoformat(pts[-1]["date"]) - first).days, 1)
+    x0, x1 = BURNUP_PAD["left"], BURNUP_W - BURNUP_PAD["right"]
+    y0, y1 = BURNUP_H - BURNUP_PAD["bottom"], BURNUP_PAD["top"]
+    if len(pts) == 1:
+        return (lambda d: (x0 + x1) / 2), (lambda v: y0 - v / n_total * (y0 - y1)), n_total
+    return (lambda d: x0 + (date.fromisoformat(d) - first).days / span * (x1 - x0)), (lambda v: y0 - v / n_total * (y0 - y1)), n_total
+
+
+def burnup_areas(pts: list[dict], x, y) -> str:
+    """The whole suite by readiness, stacked: polygons over several days, one stacked bar over a single day."""
+    out, lower = "", [0] * len(pts)
+    for k in STACK_ORDER:
+        upper = [lo + p["readiness"].get(k, 0) for lo, p in zip(lower, pts)]
+        if len(pts) == 1:
+            cx = x(pts[0]["date"])
+            out += f'<rect class="area a-{k}" x="{cx - 9:.1f}" y="{y(upper[0]):.1f}" width="18" height="{y(lower[0]) - y(upper[0]):.1f}"/>'
+        else:
+            top = " ".join(f"{x(p['date']):.1f},{y(u):.1f}" for p, u in zip(pts, upper))
+            bottom = " ".join(f"{x(p['date']):.1f},{y(lo):.1f}" for p, lo in zip(reversed(pts), reversed(lower)))
+            out += f'<polygon class="area a-{k}" points="{top} {bottom}"><title>{k}: {upper[-1] - lower[-1]} at the last point</title></polygon>'
+        lower = upper
+    return out
+
+
+def spread_labels(ys: list[float]) -> list[float]:
+    """Wave labels at least LABEL_GAP apart: the lower ones are pushed down in the order they sit, so none covers another."""
+    order = sorted(range(len(ys)), key=lambda i: ys[i])
+    placed, last = list(ys), None
+    for i in order:
+        placed[i] = ys[i] if last is None else max(ys[i], last + LABEL_GAP)
+        last = placed[i]
+    return placed
+
+
+def burnup_waves(pts: list[dict], x, y) -> str:
+    """One line per wave (a mark over a single day), each labelled at its right end."""
+    waves = sorted({w for p in pts for w in p["waves"]}, key=int)
+    values = [[p["waves"].get(w, {}).get("with_crate", 0) for p in pts] for w in waves]
+    label_ys = spread_labels([y(v[-1]) for v in values])
+    out, x_end = "", x(pts[-1]["date"])
+    for i, (w, v) in enumerate(zip(waves, values)):
+        dash = f' stroke-dasharray="{WAVE_DASHES[i % len(WAVE_DASHES)]}"' if WAVE_DASHES[i % len(WAVE_DASHES)] else ""
+        if len(pts) == 1:
+            out += f'<circle class="wave wave-{w}" cx="{x_end:.1f}" cy="{y(v[0]):.1f}" r="3.5"/>'
+        else:
+            line = " ".join(f"{x(p['date']):.1f},{y(n):.1f}" for p, n in zip(pts, v))
+            out += f'<polyline class="wave wave-{w}" points="{line}"{dash}/>'
+        out += f'<text class="lbl" x="{x_end + 8:.1f}" y="{label_ys[i] + 3.5:.1f}">wave {w}: {v[-1]}</text>'
+    return out
+
+
+def burnup_svg(hist: dict) -> str:
+    """The burn-up: x calendar days, y repositories with a first crate; the areas the whole suite by readiness, the lines one per wave."""
+    pts = hist["points"]
+    x, y, n_total = burnup_axes(hist)
+    x0, x1, y0 = BURNUP_PAD["left"], BURNUP_W - BURNUP_PAD["right"], BURNUP_H - BURNUP_PAD["bottom"]
+    grid = "".join(f'<line class="grid" x1="{x0}" y1="{y(v):.1f}" x2="{x1}" y2="{y(v):.1f}"/><text class="lbl" x="{x0 - 6}" y="{y(v) + 3.5:.1f}" text-anchor="end">{v}</text>'
+                   for v in sorted({0, n_total // 2}))
+    scope = f'<line class="scope" x1="{x0}" y1="{y(n_total):.1f}" x2="{x1}" y2="{y(n_total):.1f}"/><text class="lbl" x="{x0}" y="{y(n_total) - 5:.1f}">{n_total} repositories</text>'
+    if len(pts) == 1:                                 # the mark sits mid-axis with its labels; the date goes where the axis starts
+        dates = f'<text class="lbl" x="{x0}" y="{y0 + 16}">{pts[0]["date"]}</text>'
+    else:
+        dates = (f'<text class="lbl" x="{x0}" y="{y0 + 16}">{pts[0]["date"]}</text>'
+                 f'<text class="lbl" x="{x1}" y="{y0 + 16}" text-anchor="end">{pts[-1]["date"]}</text>')
+    return (f'<svg class="burnup" role="img" viewBox="0 0 {BURNUP_W} {BURNUP_H}" aria-labelledby="burnup-title burnup-desc">'
+            f'<title id="burnup-title">Repositories with a first crate, {hist["since"]} to {hist["as_of"]}</title>'
+            f'<desc id="burnup-desc">Stacked areas: the whole suite by readiness (shipped, partial, seed, none). Lines: one per wave. '
+            f'Dashed line: every repository, {n_total}. Last point: {pts[-1]["with_crate"]} of {pts[-1]["repositories"]}.</desc>'
+            f'{grid}{scope}{burnup_areas(pts, x, y)}{burnup_waves(pts, x, y)}{dates}</svg>')
+
+
+def history_caption(env: dict, hist: dict) -> str:
+    """Under the chart: since when, how many recorded days, from → to; where the series and its record live."""
+    pts, docs = hist["points"], env["DOCS_REPO"]
+    if len(pts) == 1:
+        lead = f'History starts today ({hist["as_of"]}): one point, {pts[0]["with_crate"]} of {pts[0]["repositories"]} repositories with a first crate.'
+    else:
+        lead = f'Since {hist["since"]}: {hist["days"]} recorded days, {pts[0]["with_crate"]} → {pts[-1]["with_crate"]} repositories with a first crate.'
+    return (f'<p class="since">{lead} Areas: the whole suite by readiness. Lines: one per wave. The series is <a href="/{HISTORY_JSON}">{HISTORY_JSON}</a>, '
+            f'one point per day, kept under <code>history/</code> on the <code>state</code> branch of the '
+            f'<a href="https://github.com/{env["ORG"]}/{docs}/tree/state">{docs} repository</a>.</p>')
+
+
+HISTORY_CSS = """
+.history { margin-top:30px; } .history h3 { font-size:17px; font-weight:700; letter-spacing:-0.2px; margin:0 0 10px; }
+.burnup { display:block; width:100%; height:auto; font-family:"JetBrains Mono", Menlo, monospace; }
+.burnup .area { stroke:none; } .burnup .a-shipped { fill:var(--blue); } .burnup .a-partial { fill:var(--partial); } .burnup .a-seed { fill:var(--seed); } .burnup .a-none { fill:var(--line); }
+.burnup .wave { fill:none; stroke:var(--ink); stroke-width:1.6; stroke-linejoin:round; stroke-linecap:round; } .burnup circle.wave { fill:var(--ink); stroke:none; }
+.burnup .grid { stroke:var(--line); stroke-width:1; } .burnup .scope { stroke:var(--muted); stroke-width:1; stroke-dasharray:4 4; }
+.burnup .lbl { fill:var(--muted); font-size:10.5px; }
+.since { font-family:"JetBrains Mono", Menlo, monospace; font-size:12.5px; color:var(--muted); margin:8px 0 0; }
+"""
+
+
+def history_section(env: dict, hist: dict) -> str:
+    """The 'Progress over time' block of the state section: the burn-up and its caption."""
+    return f'<div class="history">\n  <h3 id="history">Progress over time</h3>\n  {burnup_svg(hist)}\n  {history_caption(env, hist)}\n</div>'
+
+
+def state_section(env: dict, st: dict, repos: list[dict], shipped: dict[str, Components], hist: dict) -> str:
+    """The landing page's state section: the verdict, one bar per wave, the wave filter and legend, the ledger, the detail box, the burn-up."""
     buttons = '<button data-wave="all" aria-pressed="true">All waves</button>' + "".join(
         f'<button data-wave="{w}">Wave {w}</button>' for w in st["waves"])
     legend = "".join(f'<span><i class="r-{c}"></i>{c}</span>' for c in READINESS + [UNKNOWN])
@@ -363,6 +515,7 @@ def state_section(st: dict, repos: list[dict], shipped: dict[str, Components]) -
   <div class="tools"><div class="waves" hidden>{buttons}</div><div class="legend">{legend}</div></div>
   <div class="scroll">{ledger_grid(repos, shipped)}</div>
   <div class="detail" id="detail" aria-live="polite">{st["status"]}.</div>
+{history_section(env, hist)}
 </section>"""
 
 
@@ -424,7 +577,7 @@ footer a { color:var(--ink); }
 GITHUB_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>'
 
 
-def landing(env: dict, repos: list[dict], st: dict, shipped: dict[str, Components]) -> str:
+def landing(env: dict, repos: list[dict], st: dict, shipped: dict[str, Components], hist: dict) -> str:
     org, name, cli = env["ORG"], env["ORG_DISPLAY_NAME"], env["CLI"]
     by_ring: dict[str, list[dict]] = {}
     for r in repos:
@@ -453,7 +606,7 @@ def landing(env: dict, repos: list[dict], st: dict, shipped: dict[str, Component
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/mark-460.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
-<style>{CSS}{STATE_CSS}</style>
+<style>{CSS}{STATE_CSS}{HISTORY_CSS}</style>
 </head>
 <body>
 <div class="wrap">
@@ -472,7 +625,7 @@ def landing(env: dict, repos: list[dict], st: dict, shipped: dict[str, Component
   <img src="/assets/ledger.png" alt="The {name} ledger: five slabs, each wider than the one above" width="1000" height="1000">
 </section>
 
-{state_section(st, repos, shipped)}
+{state_section(env, st, repos, shipped, hist)}
 
 <section>
   <h2>Start here</h2>
@@ -804,6 +957,8 @@ def llms_txt(env: dict, repos: list[dict]) -> str:
               f"- [catalog.schema.json]({url}/catalog.schema.json): the JSON Schema (2020-12) the catalog validates against",
               f"- [state.json]({url}/state.json): the state of the initiative, rebuilt nightly: the build date, the status line, per repository "
               f"its ring, wave, layers, readiness and components, and per wave how many repositories have a first crate",
+              f"- [state/history.json]({url}/{HISTORY_JSON}): the same over time: one point per recorded day (since, as_of, days; per point the repositories "
+              f"with a first crate, by readiness and per wave), the series the landing page's burn-up is drawn from",
               f"- [Site source](https://github.com/{org}/{env['DOCS_REPO']}): site/build.py, the handbook and the Pages workflow that builds this site",
               f"- [RFCs](https://github.com/{org}/rfcs): every decision that crosses a repository, with its decision record"]
     for key, title, blurb in RINGS:
@@ -814,23 +969,26 @@ def llms_txt(env: dict, repos: list[dict]) -> str:
 
 # ---------------------------------------------------------------- build
 
-def build(env: dict, catalog_dir: Path, brand: Path, repos_dir: Path | None, activity_file: Path | None, out: Path) -> Path:
+def build(env: dict, catalog_dir: Path, brand: Path, repos_dir: Path | None, activity_file: Path | None, history_dir: Path | None, out: Path) -> Path:
     """<out>/www: every page and asset the site serves; <out>/handbook: the mdBook source mdbook builds into www/handbook."""
     load_brand(brand)
     repos = load_catalog(catalog_dir)
     shipped = components(env, repos, repos_dir)
     acts = activity(env, repos, activity_file)
     st = state(repos, shipped, acts, date.today().isoformat())
+    hist = history(history_dir, st)
     env["STATUS_LINE"] = st["status"]
     if out.exists():
         shutil.rmtree(out)
     www = out / "www"
     (www / "assets" / "marks").mkdir(parents=True)
     (www / ".well-known").mkdir(parents=True)
-    (www / "index.html").write_text(landing(env, repos, st, shipped))
+    (www / HISTORY_JSON).parent.mkdir(parents=True)
+    (www / "index.html").write_text(landing(env, repos, st, shipped, hist))
     (www / "state.json").write_text(json.dumps(st, indent=1) + "\n")
+    (www / HISTORY_JSON).write_text(json.dumps(hist, indent=1) + "\n")
     (www / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {env['ORG_URL']}/sitemap.txt\n")
-    (www / "sitemap.txt").write_text("".join(f"{env['ORG_URL']}/{p}\n" for p in ["", "handbook/", "llms.txt", "state.json"] + [f"{r['name']}/" for r in repos]))
+    (www / "sitemap.txt").write_text("".join(f"{env['ORG_URL']}/{p}\n" for p in ["", "handbook/", "llms.txt", "state.json", HISTORY_JSON] + [f"{r['name']}/" for r in repos]))
     (www / "llms.txt").write_text(llms_txt(env, repos))
     (www / ".well-known" / "security.txt").write_text(security_txt(env))
     (www / ".well-known" / "wasm-pkg").mkdir()
@@ -865,6 +1023,7 @@ def main(argv: list[str]) -> None:
     ap.add_argument("--lock", type=Path, metavar="FILE", default=HERE / "catalog.lock", help="the catalog lock `build` checks the catalog against (default: catalog.lock next to this file)")
     ap.add_argument("--repos", type=Path, metavar="DIR", help="read each repository's CATALOG.toml from the checkout <DIR>/<name> instead of gh api")
     ap.add_argument("--activity", type=Path, metavar="FILE", help="read each repository's GitHub activity from this JSON file (name → activity) instead of gh api graphql")
+    ap.add_argument("--history", type=Path, metavar="DIR", help="the recorded days (one state.json per day, YYYY-MM-DD.json: the state branch's history/) the burn-up is drawn from; today alone without it")
     ap.add_argument("--out", type=Path, metavar="DIR", default=DEFAULT_OUT, help=f"where `build` writes (default: {DEFAULT_OUT})")
     a = ap.parse_args(argv)
     env = org_env(a.org_env)
@@ -875,7 +1034,7 @@ def main(argv: list[str]) -> None:
             print(f"{name}\t{repo_readiness(parts)}")
     else:
         check_lock(a.catalog_dir, a.lock)
-        build(env, a.catalog_dir, a.brand, a.repos, a.activity, a.out)
+        build(env, a.catalog_dir, a.brand, a.repos, a.activity, a.history, a.out)
 
 
 if __name__ == "__main__":

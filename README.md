@@ -13,32 +13,28 @@ Planned components: mdBook site · architecture · contributor guide · glossary
 
 ## In 30 seconds
 
+This repository builds [https://publicsoftware.dev](https://publicsoftware.dev). The workflow `.github/workflows/pages.yml` runs on every push to `main`, by hand and nightly. It checks the catalog out at the ref `site/catalog.lock` names, reads every repository's `CATALOG.toml` through `gh`, and runs `site/build.py`. The build writes the landing page, one page per repository, the handbook and two machine-readable files: `state.json` (the state today) and `state/history.json` (the state over time).
+
 ```sh
-cargo run -p pub-docs-aggregate -- \
-  --catalog ../catalog/catalog/catalog.toml --repos .. --handbook site/handbook --out target/site
-mdbook build target/site   # the handbook plus one chapter per repository
+python3 site/build.py build --catalog-dir ../catalog/catalog --out target/site   # the pages and the handbook source
+python3 site/build.py status --catalog-dir ../catalog/catalog                    # the readiness count line
 ```
 
 ## What it does
 
-- `site/www` and `site/handbook` are the landing page and the handbook, rendered from the bootstrap kit and
-  published by the Pages workflow.
-- `docs-aggregate` (crate `pub-docs-aggregate`) folds every repository's `docs/` into that handbook: given the
-  catalog, a directory of checkouts and the handbook, it writes one mdBook tree with a Repositories part in ring
-  order, one chapter per catalog repository (a generated index page, the repository's own book from
-  `docs/src/SUMMARY.md` or `docs/book.toml`, its architecture decision records from `docs/adr/`), and fails naming
-  every relative link in that tree that points nowhere.
+- `site/build.py`: the landing page with the state map and the burn-up, one page per repository, `llms.txt`, `state.json`, `state/history.json`, the sitemap and the `.well-known` files.
+- `site/handbook/`: the mdBook source of the handbook.
+- `site/org.env`, `site/catalog.lock` and `site/brand/`: the organization values, the catalog pin and the brand modules, all rendered by the bootstrap kit. Do not edit them here.
+- The `state` branch: the record the burn-up is drawn from. The `history` job of the workflow writes one `state.json` per day under `history/` on that branch, once per day. No ruleset guards the branch, so the workflow token can push there. Deleting the branch only loses the chart; the next run starts a new record.
 
 ## What it does not do (yet)
 
-- Run in the Pages workflow: the workflow is rendered by the kit and still builds the handbook alone.
-- Architecture pages and the glossary beyond what the handbook carries.
+The site does not read the Roadmap project. The chart shows repositories with a first crate; it does not show issues or pull requests.
 
 ## Status
 
 | Ledger entry | Readiness | Next |
 |---|---|---|
-| mdBook site | seed | run `docs-aggregate` from the Pages workflow over the whole suite |
 
 ## How it fits the suite
 
@@ -47,6 +43,8 @@ Implements: _none yet_ · Requires: _none yet_ (see `CATALOG.toml`)
 ## Contributing
 
 `pub check` must pass. See the org-wide [CONTRIBUTING](https://github.com/public-software/.github/blob/main/CONTRIBUTING.md) and `PROVENANCE.md`.
+
+Write every public document in Simplified Technical English. The rules are in [WRITING.md](https://github.com/public-software/.github/blob/main/WRITING.md).
 
 ## Provenance
 

@@ -15,4 +15,4 @@ This is the reference for how the suite is organized and how it is built. It is 
 
 ## Status
 
-The organization was bootstrapped on 2026-09-02. Every repository exists with its skeleton, its team, its rulesets and its labels. The first release train is `2027.1`. No crate has shipped yet; the handbook will say so, per repository, until one does.
+The organization was bootstrapped on 2026-09-02. Every repository exists with its skeleton, its team, its rulesets and its labels. The first release train is `2027.1`. 9 of 57 repositories have a first crate, as of 2026-09-03. [The suite](suite.md) says it per repository: the readiness column and each repository's page on the site are read from that repository's own `CATALOG.toml` when the site is built, so they say what has shipped, not what was planned.

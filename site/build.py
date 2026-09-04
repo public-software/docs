@@ -896,12 +896,51 @@ def repo_page(env: dict, repo: dict, repos: list[dict], shipped: dict[str, Compo
 """
 
 
-def suite_md(env: dict, repos: list[dict], shipped: dict[str, Components]) -> str:
-    out = ["# The suite", "",
-           f"The [state map]({env['ORG_URL']}/#state) on the site shows every repository as one tile in its ring and layer, coloured by "
-           f"readiness, with the same data behind it as [state.json]({env['ORG_URL']}/state.json).", "",
-           "Every repository in the organization, by dependency ring. Generated from the catalog; the readiness column is the highest "
-           "readiness among the components each repository's own `CATALOG.toml` lists, read when the site was built.", ""]
+# ---------------------------------------------------------------- the handbook: facts first (reference), the prose under In depth (explanation)
+
+FACTS_HEADER = ["| Fact | Value |", "|---|---|"]
+
+
+def ring_counts(repos: list[dict]) -> str:
+    """'spine 8, platform 12, ...': the repositories per ring, in dependency order."""
+    return ", ".join(f"{key} {sum(1 for r in repos if r['ring'] == key)}" for key, _, _ in RINGS)
+
+
+def wave_range(repos: list[dict]) -> str:
+    """'1 to 5': the waves the catalog assigns."""
+    waves = sorted({r["wave"] for r in repos})
+    return f"{waves[0]} to {waves[-1]}" if len(waves) > 1 else str(waves[0])
+
+
+def wave_counts(st: dict) -> str:
+    """'wave 1: 42 repositories, 7 with a first crate; ...' from state.json's per-wave counts."""
+    return "; ".join(f'wave {w}: {c["repositories"]} repositories, {c["with_crate"]} with a first crate' for w, c in st["waves"].items())
+
+
+def state_widget(env: dict, st: dict) -> str:
+    """The introduction's state widget: the count line, the landing page's bars, a link to the map — one HTML block for mdBook."""
+    return (f'<div class="state-widget">\n<p class="count">{st["status"]}.</p>\n{wave_bars(st)}\n'
+            f'<p>The <a href="{env["ORG_URL"]}/#state">state map</a> shows it per repository; <a href="{env["ORG_URL"]}/state.json">state.json</a> carries the data.</p>\n</div>')
+
+
+def handbook_env(env: dict, repos: list[dict], st: dict) -> dict:
+    """env plus the facts the handbook pages render from the catalog and the build: counts, ranges, the state widget."""
+    return {**env, "REPO_COUNT": str(len(repos)), "RING_COUNTS": ring_counts(repos), "WAVE_RANGE": wave_range(repos), "WAVE_COUNTS": wave_counts(st),
+            "LAYER_RANGE": f"{LAYERS[0]} ({BANDS[LAYERS[0]]}) to {LAYERS[-1]} ({BANDS['L16']})", "STATE_WIDGET": state_widget(env, st)}
+
+
+def suite_facts(env: dict, repos: list[dict], st: dict) -> list[str]:
+    """The suite page's facts box and one bullet per ring."""
+    with_crate = sum(1 for e in st["repositories"] if e["components"])
+    facts = FACTS_HEADER + [f"| Repositories | {len(repos)} |", f"| With a first crate | {with_crate} of {len(repos)}, as of {st['as_of']} |",
+                            f"| Rings | {ring_counts(repos)} |", f"| Waves | {wave_counts(st)} |",
+                            f"| Map | [{env['ORG_URL']}/#state]({env['ORG_URL']}/#state), data in [state.json]({env['ORG_URL']}/state.json) |", ""]
+    bullets = [f"- [{title}](#{key}): {sum(1 for r in repos if r['ring'] == key)} repositories; {blurb}." for key, title, blurb in RINGS]
+    return facts + bullets + [""]
+
+
+def suite_md(env: dict, repos: list[dict], shipped: dict[str, Components], st: dict) -> str:
+    out = ["# The suite", ""] + suite_facts(env, repos, st)
     for key, title, blurb in RINGS:
         out += [f"## {title}", "", f"{blurb.capitalize()}.", "", "| Repository | Purpose | Layers | Wave | Contents | Readiness |", "|---|---|---|---|---|---|"]
         for r in repos:
@@ -909,6 +948,10 @@ def suite_md(env: dict, repos: list[dict], shipped: dict[str, Components]) -> st
                 out.append(f"| [{r['name']}](https://github.com/{env['ORG']}/{r['name']}) | {r['purpose']} | {', '.join(r['layers'])} | "
                            f"{r['wave']} | {r['contents']} | {repo_readiness(shipped.get(r['name']))} |")
         out.append("")
+    out += ["## In depth", "",
+            "This page is generated from the catalog. The tables list every repository in the organization, by dependency ring. "
+            "The readiness column is the highest readiness among the components each repository's own `CATALOG.toml` lists, read when the site was built. "
+            f"The [state map]({env['ORG_URL']}/#state) on the site shows the same data as one tile per repository, in its ring and layer, coloured by readiness.", ""]
     return "\n".join(out)
 
 
@@ -1002,14 +1045,14 @@ def build(env: dict, catalog_dir: Path, brand: Path, repos_dir: Path | None, act
         shutil.copy(brand / "repos" / f"{r['name']}.png", www / "assets" / "marks" / f"{r['name']}.png")
         (www / r["name"]).mkdir()
         (www / r["name"] / "index.html").write_text(repo_page(env, r, repos, shipped, acts, st["as_of"]))
-    book = out / "handbook"
+    book, henv = out / "handbook", handbook_env(env, repos, st)
     (book / "src").mkdir(parents=True)
     for f in HERE.glob("handbook/*"):
         if f.is_file():
             (book / f.name).write_text(render(f.read_text(), env))
     for f in HERE.glob("handbook/src/*.md"):
-        (book / "src" / f.name).write_text(render(f.read_text(), env))
-    (book / "src" / "suite.md").write_text(suite_md(env, repos, shipped))
+        (book / "src" / f.name).write_text(render(f.read_text(), henv))
+    (book / "src" / "suite.md").write_text(suite_md(env, repos, shipped, st))
     print(f"  ✓ site built in {out} ({len(repos)} repositories; {env['STATUS_LINE']})")
     return out
 

@@ -7,3 +7,10 @@ html { font-family: "Public Sans", system-ui, -apple-system, sans-serif; }
 h1, h2, h3 { font-weight: 800; letter-spacing: -0.4px; }
 code, pre { font-family: "JetBrains Mono", Menlo, monospace; }
 table th { font-family: "JetBrains Mono", Menlo, monospace; font-size: 0.8em; letter-spacing: 0.5px; text-transform: uppercase; }
+/* the introduction's state widget: the count line and the landing page's per-wave bars, over the theme variables */
+.state-widget { margin: 1em 0; padding: 0.8em 1em; border: 1px solid var(--table-border-color); border-radius: 8px; }
+.state-widget .count { font-family: "JetBrains Mono", Menlo, monospace; font-size: 0.85em; margin: 0 0 0.6em; }
+.state-widget .wave { margin: 0.4em 0; } .state-widget .wave span { display: block; font-size: 0.85em; margin-bottom: 0.2em; }
+.state-widget .wave i { display: block; height: 8px; border-radius: 4px; background: var(--table-border-color); overflow: hidden; }
+.state-widget .wave b { display: block; height: 100%; border-radius: 4px; background: var(--links); }
+.state-widget p:last-child { margin: 0.6em 0 0; font-size: 0.9em; }

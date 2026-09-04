@@ -4,6 +4,7 @@ built and deployed by this repository's Pages workflow (.github/workflows/pages.
 
   python3 site/build.py build  --catalog-dir DIR [--repos DIR] [--out DIR]   # → <out>/www/ (the pages) and <out>/handbook/ (mdBook source)
   python3 site/build.py status --catalog-dir DIR [--repos DIR]               # the readiness count line the org profile README carries
+  python3 site/build.py readiness --catalog-dir DIR [--repos DIR]            # name<TAB>readiness per repository (what the Roadmap project mirrors)
 
 Inputs, all next to this file unless a flag says otherwise: org.env (the organization values, rendered by the
 bootstrap kit), catalog.lock (the catalog this site is built from: the build refuses a catalog.toml that does not
@@ -531,7 +532,7 @@ def build(env: dict, catalog_dir: Path, brand: Path, repos_dir: Path | None, out
 
 def main(argv: list[str]) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=["build", "status"])
+    ap.add_argument("command", choices=["build", "status", "readiness"])
     ap.add_argument("--catalog-dir", type=Path, metavar="DIR", required=True, help="the directory holding catalog.toml and catalog.schema.json")
     ap.add_argument("--org-env", type=Path, metavar="FILE", default=HERE / "org.env", help="the organization values (default: org.env next to this file)")
     ap.add_argument("--brand", type=Path, metavar="DIR", default=HERE / "brand", help="the vendored brand modules and PNGs (default: brand/ next to this file)")
@@ -542,6 +543,9 @@ def main(argv: list[str]) -> None:
     env = org_env(a.org_env)
     if a.command == "status":
         print(status_line(components(env, load_catalog(a.catalog_dir), a.repos), date.today().isoformat()))
+    elif a.command == "readiness":
+        for name, parts in components(env, load_catalog(a.catalog_dir), a.repos).items():
+            print(f"{name}\t{repo_readiness(parts)}")
     else:
         check_lock(a.catalog_dir, a.lock)
         build(env, a.catalog_dir, a.brand, a.repos, a.out)

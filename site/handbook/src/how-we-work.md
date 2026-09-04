@@ -20,7 +20,7 @@ Layers `L0` to `L18` are the ledger: the rungs of the stack from silicon to cont
 
 ## Waves
 
-A wave is when a repository's first crate becomes buildable. The wave is assigned per repository in the catalog, not per ring: it is the `wave` field of the repository's entry, and the organization mirrors it as the `wave` custom property and the `wave-N` topic. Wave 1 spans every ring, from the spine to the standards. Within a wave, work proceeds ring by ring in dependency order (spine, platform, system, domain, standards), because a repository can only build once everything it depends on builds. The public `Roadmap` project mirrors the catalog's waves, layers, readiness and rings as fields.
+A wave is when a repository's first crate becomes buildable. The wave is assigned per repository in the catalog, not per ring: it is the `wave` field of the repository's entry, and the organization mirrors it as the `wave` custom property and the `wave-N` topic. Wave 1 spans every ring, from the spine to the standards. Within a wave, work proceeds ring by ring in dependency order (spine, platform, system, domain, standards), because a repository can only build once everything it depends on builds. The public `Roadmap` project carries one item per repository, with the catalog's ring, wave and layers and the repository's readiness as fields; the readiness is the highest among the components the repository's own `CATALOG.toml` lists, `none` until a first crate, and the bootstrap kit regenerates the project from the catalog and those files, reading before every write.
 
 ## The catalog
 

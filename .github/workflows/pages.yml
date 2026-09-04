@@ -39,7 +39,8 @@ jobs:
           echo "${MDBOOK_SHA256}  mdbook.tar.gz" | sha256sum -c -
           tar xzf mdbook.tar.gz
       - name: Build the site (every repository's CATALOG.toml is read through gh)
-        env: { GH_TOKEN: ${{ github.token }} }
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: python3 site/build.py build --catalog-dir catalog/catalog --out target/site
       - name: Build the handbook
         run: ./mdbook build target/site/handbook -d "$PWD/target/site/www/handbook"

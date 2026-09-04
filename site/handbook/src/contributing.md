@@ -47,7 +47,7 @@ If you consulted an existing implementation while working, say so in the pull re
 
 ### The review gate
 
-Every pull request is read by an agent before a human reviews it. The agent applies the seven rules below and reports a finding for each rule the change breaks. A **hard** finding fails the required check `suite / policy`, so the pull request cannot merge until it is fixed; a **soft** finding is advice in the review comment. `trailer` and `provenance` are also checked deterministically, so they block even on a fork's pull request, where the agent does not run (it cannot see the organization secret; a maintainer pushes the branch into the repository for the agent pass). The merge queue reuses the verdict recorded on the pull request.
+Every pull request is read by an agent before a human reviews it. The agent applies the seven rules below and reports a finding for each rule the change breaks. A **hard** finding fails the required check `suite / policy`, so the pull request cannot merge until it is fixed; a **soft** finding is advice in the review comment. `trailer` and `provenance` are also checked deterministically, so they block even on a fork's pull request, where the agent does not run (the agent is the GitHub Copilot CLI on the workflow's own token, and a fork's token carries no Copilot permission; a maintainer pushes the branch into the repository for the agent pass). The merge queue reuses the verdict recorded on the pull request.
 
 | Rule | Severity | The reviewer asks | Self-check before opening the pull request |
 |---|---|---|---|

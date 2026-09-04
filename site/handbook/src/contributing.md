@@ -24,6 +24,10 @@ Rust `1.90` or newer, edition `2024`.
 4. `pub check` must pass. So must the repository's CI.
 5. Open a pull request. One approving review from a code owner merges it; platform-ring repositories need two.
 
+## Write
+
+Write every public document in Simplified Technical English (ASD-STE100). This applies to every repository: README files, this handbook, the site, crate documentation, RFC text and release notes. The rules, the names of the suite and where to get the specification are in [WRITING.md](https://github.com/public-software/.github/blob/main/WRITING.md). Short sentences, one topic each, active voice, one word for one thing.
+
 ## Provenance
 
 If you consulted an existing implementation while working, say so in the pull request. `PROVENANCE.md` in each repository records what may and may not be consulted for that component; the `kind/provenance` label is for questions about it.
